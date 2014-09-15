@@ -182,6 +182,7 @@ struct char_desc {
         /* fmt */
         uint16_t length;
         uint16_t handle;
+        ble_gatts_char_pf_t format;
 };
 
 struct service_desc {
@@ -202,18 +203,12 @@ srv_register(struct service_desc *s)
                 struct char_desc *c = &s->chars[i];
 
                 ble_gatts_char_handles_t chr_handles;
-                /* ble_gatts_char_pf_t fmt = { */
-                /*         .format = BLE_GATT_CPF_FORMAT_SINT16, */
-                /*         .exponent = 0, */
-
-                /*         .unit = 0x272f, */
-                /* }; */
                 ble_gatts_char_md_t char_meta = {
                         .char_props = {.read = 1},
                         .p_char_user_desc = (uint8_t *)c->desc,
                         .char_user_desc_size = strlen(c->desc),
                         .char_user_desc_max_size = strlen(c->desc),
-                        /* .p_char_pf = &fmt, */
+                        .p_char_pf = &c->format,
                 };
                 ble_gatts_attr_md_t chr_attr_meta = {
                         .vloc = BLE_GATTS_VLOC_STACK,
@@ -260,6 +255,16 @@ srv_char_add(struct service_desc *s, struct char_desc *c, uint8_t type, uint16_t
         s->char_count++;
 }
 
+static void
+srv_char_attach_format(struct char_desc *c, uint8_t format, int8_t exponent, uint16_t unit)
+{
+        c->format = (ble_gatts_char_pf_t){
+                .format = format,
+                .exponent = exponent,
+                .unit = unit,
+        };
+}
+
 
 static void
 srv_char_update(struct char_desc *c, void *val)
@@ -283,12 +288,10 @@ ble_srv_temp_init(struct temp_ctx *ctx)
                      get_vendor_uuid_class(), VENDOR_UUID_TEMP_CHAR,
                      u8"Temperature",
                      2);
-
-        /* ble_gatts_char_pf_t fmt = { */
-        /*         .format = BLE_GATT_CPF_FORMAT_SINT16, */
-        /*         .exponent = 0, */
-        /*         .unit = 0x272f, */
-        /* }; */
+        srv_char_attach_format(&ctx->temp,
+                               BLE_GATT_CPF_FORMAT_SINT16,
+                               0,
+                               0x272f);
         srv_register(ctx);
 }
 
