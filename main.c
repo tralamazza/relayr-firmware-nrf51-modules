@@ -176,53 +176,103 @@ enum vendor_uuid {
         VENDOR_UUID_PROX_CHAR = 0x2308,
 };
 
-static void
-ble_srv_temp_init(void)
-{
-        uint16_t srv_handle;
-        ble_uuid_t srv_uuid = {.type = get_vendor_uuid_class(),
-                               .uuid = VENDOR_UUID_SENSOR_SERVICE};
-        sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY,
-                                 &srv_uuid,
-                                 &srv_handle);
+struct char_desc {
+        ble_uuid_t uuid;
+        const char *desc;
+        /* fmt */
+        uint16_t length;
+        uint16_t handle;
+};
 
-        ble_gatts_char_handles_t chr_handles;
-        ble_gatts_char_pf_t fmt = {
-                .format = BLE_GATT_CPF_FORMAT_SINT16,
-                .exponent = 0,
-                .unit = 0x272f,
-        };
-        const char *descstr = u8"Temperature";
-        ble_gatts_char_md_t char_meta = {
-                .char_props = {.read = 1},
-                .p_char_user_desc = (uint8_t *)descstr,
-                .char_user_desc_size = strlen(descstr),
-                .char_user_desc_max_size = strlen(descstr),
-                .p_char_pf = &fmt,
-        };
-        ble_uuid_t chr_uuid = {
-                .type = get_vendor_uuid_class(),
-                .uuid = VENDOR_UUID_TEMP_CHAR
-        };
-        ble_gatts_attr_md_t chr_attr_meta = {
-                .vloc = BLE_GATTS_VLOC_STACK,
-        };
-        BLE_GAP_CONN_SEC_MODE_SET_OPEN(&chr_attr_meta.read_perm);
-        BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&chr_attr_meta.write_perm);
-        uint16_t temp_val = 0x1234;
-        ble_gatts_attr_t chr_attr = {
-                .p_uuid = &chr_uuid,
-                .p_attr_md = &chr_attr_meta,
-                .init_offs = 0,
-                .init_len = sizeof(temp_val),
-                .max_len = sizeof(temp_val),
-                .p_value = (uint8_t *)&temp_val,
-        };
-        sd_ble_gatts_characteristic_add(srv_handle,
-                                        &char_meta,
-                                        &chr_attr,
-                                        &chr_handles);
+struct service_desc {
+        ble_uuid_t uuid;
+        uint16_t handle;
+        uint8_t char_count;     /* XXX ugly */
+        struct char_desc chars[];
+};
+
+static void
+srv_init(struct service_desc *s)
+{
+        sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY,
+                                 &s->uuid,
+                                 &s->handle);
+
+        for (int i = 0; i < s->char_count; ++i) {
+                struct char_desc *c = &s->chars[i];
+
+                ble_gatts_char_handles_t chr_handles;
+                /* ble_gatts_char_pf_t fmt = { */
+                /*         .format = BLE_GATT_CPF_FORMAT_SINT16, */
+                /*         .exponent = 0, */
+
+                /*         .unit = 0x272f, */
+                /* }; */
+                ble_gatts_char_md_t char_meta = {
+                        .char_props = {.read = 1},
+                        .p_char_user_desc = (uint8_t *)c->desc,
+                        .char_user_desc_size = strlen(c->desc),
+                        .char_user_desc_max_size = strlen(c->desc),
+                        /* .p_char_pf = &fmt, */
+                };
+                ble_gatts_attr_md_t chr_attr_meta = {
+                        .vloc = BLE_GATTS_VLOC_STACK,
+                };
+                BLE_GAP_CONN_SEC_MODE_SET_OPEN(&chr_attr_meta.read_perm);
+                BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&chr_attr_meta.write_perm);
+
+                ble_gatts_attr_t chr_attr = {
+                        .p_uuid = &c->uuid,
+                        .p_attr_md = &chr_attr_meta,
+                        .init_offs = 0,
+                        .init_len = 0,
+                        .max_len = c->length,
+                };
+                sd_ble_gatts_characteristic_add(s->handle,
+                                                &char_meta,
+                                                &chr_attr,
+                                                &chr_handles);
+                c->handle = chr_handles.value_handle;
+        }
 }
+
+struct temp_ctx {
+        struct service_desc;
+        struct char_desc temp;
+};
+
+
+static void
+ble_srv_temp_init(struct temp_ctx *ctx)
+{
+        *ctx = (struct temp_ctx){
+                .uuid = {.type = get_vendor_uuid_class(),
+                         .uuid = VENDOR_UUID_SENSOR_SERVICE},
+                .char_count = 1,
+        };
+        ctx->temp = (struct char_desc){
+                .uuid = {
+                        .type = get_vendor_uuid_class(),
+                        .uuid = VENDOR_UUID_TEMP_CHAR
+                },
+                .desc = u8"Temperature",
+                .length = 2,
+        };
+        /* ble_gatts_char_pf_t fmt = { */
+        /*         .format = BLE_GATT_CPF_FORMAT_SINT16, */
+        /*         .exponent = 0, */
+        /*         .unit = 0x272f, */
+        /* }; */
+        srv_init(ctx);
+}
+
+static void
+ble_srv_temp_update(struct temp_ctx *ctx, uint16_t val)
+{
+        uint16_t len = ctx->temp.length;
+        sd_ble_gatts_value_set(ctx->temp.handle, 0, &len, (uint8_t *)&val);
+}
+
 
 static void
 ble_app_disconnected(void)
@@ -262,13 +312,17 @@ process_event_loop(void)
 }
 
 
+static struct temp_ctx temp_ctx;
+
 void
 main(void)
 {
         ble_init("foo");
         ble_srv_tx_init();
-        ble_srv_temp_init();
+        ble_srv_temp_init(&temp_ctx);
         ble_adv_start();
+
+        ble_srv_temp_update(&temp_ctx, 1234);
 
         process_event_loop();
 }
