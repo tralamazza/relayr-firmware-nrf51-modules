@@ -192,7 +192,7 @@ struct service_desc {
 };
 
 static void
-srv_init(struct service_desc *s)
+srv_register(struct service_desc *s)
 {
         sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY,
                                  &s->uuid,
@@ -236,6 +236,39 @@ srv_init(struct service_desc *s)
         }
 }
 
+static void
+srv_init(struct service_desc *s, uint8_t type, uint16_t id)
+{
+        *s = (struct service_desc){
+                .uuid = {.type = type,
+                         .uuid = id},
+                .char_count = 0,
+        };
+};
+
+static void
+srv_char_add(struct service_desc *s, struct char_desc *c, uint8_t type, uint16_t id, const char *desc, uint16_t length)
+{
+        *c = (struct char_desc){
+                .uuid = {
+                        .type = type,
+                        .uuid = id
+                },
+                .desc = desc,
+                .length = length,
+        };
+        s->char_count++;
+}
+
+
+static void
+srv_char_update(struct char_desc *c, void *val)
+{
+        uint16_t len = c->length;
+        sd_ble_gatts_value_set(c->handle, 0, &len, val);
+}
+
+
 struct temp_ctx {
         struct service_desc;
         struct char_desc temp;
@@ -245,32 +278,24 @@ struct temp_ctx {
 static void
 ble_srv_temp_init(struct temp_ctx *ctx)
 {
-        *ctx = (struct temp_ctx){
-                .uuid = {.type = get_vendor_uuid_class(),
-                         .uuid = VENDOR_UUID_SENSOR_SERVICE},
-                .char_count = 1,
-        };
-        ctx->temp = (struct char_desc){
-                .uuid = {
-                        .type = get_vendor_uuid_class(),
-                        .uuid = VENDOR_UUID_TEMP_CHAR
-                },
-                .desc = u8"Temperature",
-                .length = 2,
-        };
+        srv_init(ctx, get_vendor_uuid_class(), VENDOR_UUID_SENSOR_SERVICE);
+        srv_char_add(ctx, &ctx->temp,
+                     get_vendor_uuid_class(), VENDOR_UUID_TEMP_CHAR,
+                     u8"Temperature",
+                     2);
+
         /* ble_gatts_char_pf_t fmt = { */
         /*         .format = BLE_GATT_CPF_FORMAT_SINT16, */
         /*         .exponent = 0, */
         /*         .unit = 0x272f, */
         /* }; */
-        srv_init(ctx);
+        srv_register(ctx);
 }
 
 static void
 ble_srv_temp_update(struct temp_ctx *ctx, uint16_t val)
 {
-        uint16_t len = ctx->temp.length;
-        sd_ble_gatts_value_set(ctx->temp.handle, 0, &len, (uint8_t *)&val);
+        srv_char_update(&ctx->temp, &val);
 }
 
 
