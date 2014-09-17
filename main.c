@@ -166,6 +166,7 @@ get_vendor_uuid_class(void)
 
 enum vendor_uuid {
         VENDOR_UUID_SENSOR_SERVICE = 0x1801,
+        VENDOR_UUID_IND_SERVICE = 0x1802,
         VENDOR_UUID_TEMP_CHAR = 0x2301,
         VENDOR_UUID_HUMID_CHAR = 0x2302,
         VENDOR_UUID_ACCEL_CHAR = 0x2303,
@@ -174,7 +175,14 @@ enum vendor_uuid {
         VENDOR_UUID_BRIGHT_CHAR = 0x2306,
         VENDOR_UUID_COLOR_CHAR = 0x2307,
         VENDOR_UUID_PROX_CHAR = 0x2308,
+        VENDOR_UUID_IND_CHAR = 0x2309,
 };
+
+
+struct char_desc;
+struct service_desc;
+
+typedef void (char_write_cb_t)(struct service_desc *s, struct char_desc *c, const void *val);
 
 struct char_desc {
         ble_uuid_t uuid;
@@ -183,18 +191,26 @@ struct char_desc {
         uint16_t length;
         uint16_t handle;
         ble_gatts_char_pf_t format;
+        char_write_cb_t *write_cb;
+        void *data;
 };
 
 struct service_desc {
+        struct service_desc *next;
         ble_uuid_t uuid;
         uint16_t handle;
         uint8_t char_count;     /* XXX ugly */
         struct char_desc chars[];
 };
 
+static struct service_desc *services;
+
 static void
 srv_register(struct service_desc *s)
 {
+        s->next = services;
+        services = s;
+
         sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY,
                                  &s->uuid,
                                  &s->handle);
@@ -202,19 +218,27 @@ srv_register(struct service_desc *s)
         for (int i = 0; i < s->char_count; ++i) {
                 struct char_desc *c = &s->chars[i];
 
-                ble_gatts_char_handles_t chr_handles;
+                int have_write = c->write_cb != NULL;
                 ble_gatts_char_md_t char_meta = {
-                        .char_props = {.read = 1},
+                        .char_props = {
+                                .read = 1,
+                                /* XXX customizable */
+                                .write = have_write,
+                                .write_wo_resp = have_write,
+                                .auth_signed_wr = have_write,
+                        },
                         .p_char_user_desc = (uint8_t *)c->desc,
                         .char_user_desc_size = strlen(c->desc),
                         .char_user_desc_max_size = strlen(c->desc),
-                        .p_char_pf = &c->format,
+                        .p_char_pf = c->format.format != 0 ? &c->format : NULL,
                 };
                 ble_gatts_attr_md_t chr_attr_meta = {
                         .vloc = BLE_GATTS_VLOC_STACK,
                 };
                 BLE_GAP_CONN_SEC_MODE_SET_OPEN(&chr_attr_meta.read_perm);
                 BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&chr_attr_meta.write_perm);
+                if (have_write)
+                        BLE_GAP_CONN_SEC_MODE_SET_OPEN(&chr_attr_meta.write_perm);
 
                 ble_gatts_attr_t chr_attr = {
                         .p_uuid = &c->uuid,
@@ -223,6 +247,7 @@ srv_register(struct service_desc *s)
                         .init_len = 0,
                         .max_len = c->length,
                 };
+                ble_gatts_char_handles_t chr_handles;
                 sd_ble_gatts_characteristic_add(s->handle,
                                                 &char_meta,
                                                 &chr_attr,
@@ -265,12 +290,86 @@ srv_char_attach_format(struct char_desc *c, uint8_t format, int8_t exponent, uin
         };
 }
 
-
 static void
 srv_char_update(struct char_desc *c, void *val)
 {
         uint16_t len = c->length;
         sd_ble_gatts_value_set(c->handle, 0, &len, val);
+}
+
+static struct service_desc *
+srv_find_by_uuid(ble_uuid_t *uuid)
+{
+        struct service_desc *s = services;
+
+        for (; s != NULL; s = s->next) {
+                if (memcmp(&s->uuid, uuid, sizeof(uuid)) == 0)
+                        break;
+        }
+
+        return (s);
+}
+
+static struct char_desc *
+srv_find_char_by_uuid(struct service_desc *s, ble_uuid_t *uuid)
+{
+        struct char_desc *c = s->chars;
+
+        for (int i = 0; i < s->char_count; ++i, ++c) {
+                if (memcmp(&c->uuid, uuid, sizeof(uuid)) == 0)
+                        return (c);
+        }
+        return (NULL);
+}
+
+static void
+srv_handle_ble_event(ble_evt_t *evt)
+{
+        struct service_desc *s;
+        struct char_desc *c;
+
+        switch (evt->header.evt_id) {
+        case BLE_GATTS_EVT_WRITE:
+                s = srv_find_by_uuid(&evt->evt.gatts_evt.params.write.context.srvc_uuid);
+                c = srv_find_char_by_uuid(s, &evt->evt.gatts_evt.params.write.context.char_uuid);
+                c->write_cb(s, c, evt->evt.gatts_evt.params.write.data);
+                break;
+        }
+}
+
+
+struct indicator_ctx {
+        struct service_desc;
+        struct char_desc ind;
+};
+
+
+static void
+ble_srv_ind_write_cb(struct service_desc *s, struct char_desc *c, const void *val)
+{
+        const uint8_t *datap = val;
+        uint8_t data = *datap;
+
+        switch (data) {
+        case 0:
+                onboard_led(ONBOARD_LED_OFF);
+                break;
+        case 1:
+                onboard_led(ONBOARD_LED_ON);
+                break;
+        }
+}
+
+static void
+ble_srv_ind_init(struct indicator_ctx *ctx)
+{
+        srv_init(ctx, get_vendor_uuid_class(), VENDOR_UUID_IND_SERVICE);
+        srv_char_add(ctx, &ctx->ind,
+                     get_vendor_uuid_class(), VENDOR_UUID_IND_CHAR,
+                     u8"Indicator LED",
+                     1);
+        ctx->ind.write_cb = ble_srv_ind_write_cb;
+        srv_register(ctx);
 }
 
 
@@ -334,6 +433,9 @@ process_event_loop(void)
                         case BLE_GAP_EVT_DISCONNECTED:
                                 ble_app_disconnected();
                                 break;
+                        default:
+                                srv_handle_ble_event(&evt_buf.evt);
+                                break;
                         }
                 }
         }
@@ -341,6 +443,7 @@ process_event_loop(void)
 
 
 static struct temp_ctx temp_ctx;
+static struct indicator_ctx ind_ctx;
 
 void
 main(void)
@@ -348,6 +451,7 @@ main(void)
         ble_init("foo");
         ble_srv_tx_init();
         ble_srv_temp_init(&temp_ctx);
+        ble_srv_ind_init(&ind_ctx);
         ble_adv_start();
 
         ble_srv_temp_update(&temp_ctx, 1234);
