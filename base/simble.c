@@ -301,7 +301,7 @@ srv_handle_ble_event(ble_evt_t *evt)
                         auth_reply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
                         if (c->read_cb) {
                                 auth_reply.params.read.update = 1;
-                                c->read_cb(s, c, auth_reply.params.read.p_data, &auth_reply.params.read.len);
+                                c->read_cb(s, c, (void*)&auth_reply.params.read.p_data, &auth_reply.params.read.len);
                         }
                 } else {
                         auth_reply.params.write.gatt_status = BLE_GATT_STATUS_SUCCESS;

@@ -16,36 +16,43 @@
 struct rh_ctx {
 	struct service_desc;
 	struct char_desc rh;
+	uint8_t last_reading;
 };
 
 struct temp_ctx {
 	struct service_desc;
 	struct char_desc temp;
+	int8_t last_reading;
 };
 
 
-static void
-rh_update(struct rh_ctx *ctx)
+static bool
+rh_reading(struct rh_ctx *ctx)
 {
-	uint8_t rh;
-	if (htu21_read_humidity(&rh)) {
-		simble_srv_char_update(&ctx->rh, &rh);
+	return htu21_read_humidity(&ctx->last_reading);
+}
+
+static void
+rh_char_srv_update(struct rh_ctx *ctx)
+{
+	if (rh_reading(ctx)) {
+		simble_srv_char_update(&ctx->rh, &ctx->last_reading);
 	}
 }
 
 static void
 rh_connected(struct service_desc *s)
 {
-	rh_update((struct rh_ctx *) s);
+	rh_char_srv_update((struct rh_ctx *) s);
 }
 
 static void
-rh_read_cb(struct service_desc *s, struct char_desc *c, void *val, uint16_t *len)
+rh_read_cb(struct service_desc *s, struct char_desc *c, void **val, uint16_t *len)
 {
-	uint8_t rh;
-	if (htu21_read_humidity(&rh)) {
+	struct rh_ctx *ctx = (struct rh_ctx *) s;
+	if (rh_reading(ctx)) {
 		*len = 1;
-		*(int8_t*)val = rh;
+		*val = &ctx->last_reading;
 	}
 }
 
@@ -66,19 +73,24 @@ rh_init(struct rh_ctx *ctx)
 	simble_srv_register(ctx);
 }
 
-static void
-temp_update(struct temp_ctx *ctx)
+static bool
+temp_reading(struct temp_ctx *ctx)
 {
-	int8_t temp;
-	if (htu21_read_temperature(&temp)) {
-		simble_srv_char_update(&ctx->temp, &temp);
+	return htu21_read_temperature(&ctx->last_reading);
+}
+
+static void
+temp_char_srv_update(struct temp_ctx *ctx)
+{
+	if (temp_reading(ctx)) {
+		simble_srv_char_update(&ctx->temp, &ctx->last_reading);
 	}
 }
 
 static void
 temp_connected(struct service_desc *s)
 {
-	temp_update((struct temp_ctx *) s);
+	temp_char_srv_update((struct temp_ctx *) s);
 	NRF_RTC1->TASKS_CLEAR = 1;
 	NRF_RTC1->TASKS_START = 1;
 }
@@ -90,12 +102,12 @@ temp_disconnected(struct service_desc *s)
 }
 
 static void
-temp_read_cb(struct service_desc *s, struct char_desc *c, void *val, uint16_t *len)
+temp_read_cb(struct service_desc *s, struct char_desc *c, void **val, uint16_t *len)
 {
-	int8_t temp;
-	if (htu21_read_temperature(&temp)) {
+	struct temp_ctx *ctx = (struct temp_ctx *) s;
+	if (temp_reading(ctx)) {
 		*len = 1;
-		*(int8_t*)val = temp;
+		*val = &ctx->last_reading;
 	}
 }
 
@@ -145,8 +157,8 @@ static struct temp_ctx temp_ctx;
 
 void RTC1_IRQHandler()
 {
-	temp_update(&temp_ctx);
-	rh_update(&rh_ctx);
+	temp_char_srv_update(&temp_ctx);
+	rh_char_srv_update(&rh_ctx);
 }
 
 void
