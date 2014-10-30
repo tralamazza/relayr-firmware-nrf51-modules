@@ -24,24 +24,29 @@ struct temp_ctx {
 };
 
 
-void RTC0_IRQHandler()
+static void
+rh_update(struct rh_ctx *ctx)
 {
-	onboard_led(ONBOARD_LED_TOGGLE);
+	uint8_t rh;
+	if (htu21_read_humidity(&rh)) {
+		simble_srv_char_update(&ctx->rh, &rh);
+	}
 }
 
 static void
 rh_connected(struct service_desc *s)
 {
-}
-
-static void
-rh_disconnected(struct service_desc *s)
-{
+	rh_update((struct rh_ctx *) s);
 }
 
 static void
 rh_read_cb(struct service_desc *s, struct char_desc *c, void *val, uint16_t *len)
 {
+	uint8_t rh;
+	if (htu21_read_humidity(&rh)) {
+		*len = 1;
+		*(int8_t*)val = rh;
+	}
 }
 
 static void
@@ -57,24 +62,41 @@ rh_init(struct rh_ctx *ctx)
 		0,
 		ORG__BLUETOOTH__UNIT__PERCENTAGE);
 	ctx->connect_cb = rh_connected;
-	ctx->disconnect_cb = rh_disconnected;
 	ctx->rh.read_cb = rh_read_cb;
 	simble_srv_register(ctx);
 }
 
 static void
+temp_update(struct temp_ctx *ctx)
+{
+	int8_t temp;
+	if (htu21_read_temperature(&temp)) {
+		simble_srv_char_update(&ctx->temp, &temp);
+	}
+}
+
+static void
 temp_connected(struct service_desc *s)
 {
+	temp_update((struct temp_ctx *) s);
+	NRF_RTC1->TASKS_CLEAR = 1;
+	NRF_RTC1->TASKS_START = 1;
 }
 
 static void
 temp_disconnected(struct service_desc *s)
 {
+	NRF_RTC1->TASKS_STOP = 1;
 }
 
 static void
 temp_read_cb(struct service_desc *s, struct char_desc *c, void *val, uint16_t *len)
 {
+	int8_t temp;
+	if (htu21_read_temperature(&temp)) {
+		*len = 1;
+		*(int8_t*)val = temp;
+	}
 }
 
 static void
@@ -109,15 +131,23 @@ lfclk_init(void)
 static void
 rtc_init(void)
 {
-	NVIC_EnableIRQ(RTC0_IRQn);
-	NRF_RTC0->PRESCALER = 32767; // 1Hz, prescaler = (32768 / Hz) - 1
-	NRF_RTC0->INTENSET = RTC_INTENSET_TICK_Msk;
-	NRF_RTC0->TASKS_START = 1;
+	NRF_RTC1->PRESCALER = (32768u / 1u) - 1u; // 1Hz, prescaler = (32768 / 1Hz) - 1
+	NRF_RTC1->INTENSET = RTC_INTENSET_TICK_Msk;
+	sd_nvic_ClearPendingIRQ(RTC1_IRQn);
+	sd_nvic_SetPriority(RTC1_IRQn, 3);
+	sd_nvic_EnableIRQ(RTC1_IRQn);
 }
 
 
 static struct rh_ctx rh_ctx;
 static struct temp_ctx temp_ctx;
+
+
+void RTC1_IRQHandler()
+{
+	temp_update(&temp_ctx);
+	rh_update(&rh_ctx);
+}
 
 void
 main(void)

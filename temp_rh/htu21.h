@@ -4,8 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define HTU21_ADDRESS_R 0x80
-#define HTU21_ADDRESS_W 0x81
+#define HTU21_ADDRESS 0x80
 
 enum htu21_command_t {
 	HTU21_READ_TEMPERATURE_BLOCKING = 0xE3,
