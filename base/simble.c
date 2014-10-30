@@ -170,6 +170,8 @@ simble_srv_register(struct service_desc *s)
                 };
                 ble_gatts_attr_md_t chr_attr_meta = {
                         .vloc = BLE_GATTS_VLOC_STACK,
+                        .rd_auth = 1,
+                        .wr_auth = 1,
                 };
                 BLE_GAP_CONN_SEC_MODE_SET_OPEN(&chr_attr_meta.read_perm);
                 BLE_GAP_CONN_SEC_MODE_SET_NO_ACCESS(&chr_attr_meta.write_perm);
