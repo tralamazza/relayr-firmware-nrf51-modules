@@ -11,7 +11,7 @@ static struct indicator_ctx ind_ctx;
 
 
 static void
-ind_write_cb(struct service_desc *s, struct char_desc *c, const void *val)
+ind_write_cb(struct service_desc *s, struct char_desc *c, const void *val, const uint16_t len)
 {
         const uint8_t *datap = val;
         uint8_t data = *datap;

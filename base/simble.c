@@ -290,6 +290,25 @@ srv_handle_ble_event(ble_evt_t *evt)
         struct char_desc *c;
 
         switch (evt->header.evt_id) {
+        case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST: {
+                ble_gatts_rw_authorize_reply_params_t auth_reply = {
+                        .type = evt->evt.gatts_evt.params.authorize_request.type,
+                };
+                if (auth_reply.type == BLE_GATTS_AUTHORIZE_TYPE_READ) {
+                        ble_gatts_attr_context_t *ctx = &evt->evt.gatts_evt.params.authorize_request.request.read.context;
+                        s = srv_find_by_uuid(&ctx->srvc_uuid);
+                        c = srv_find_char_by_uuid(s, &ctx->char_uuid);
+                        auth_reply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
+                        if (c->read_cb) {
+                                auth_reply.params.read.update = 1;
+                                c->read_cb(s, c, auth_reply.params.read.p_data, &auth_reply.params.read.len);
+                        }
+                } else {
+                        auth_reply.params.write.gatt_status = BLE_GATT_STATUS_SUCCESS;
+                }
+                sd_ble_gatts_rw_authorize_reply(evt->evt.gatts_evt.conn_handle, &auth_reply);
+                break;
+        }
         case BLE_GAP_EVT_CONNECTED:
                 srv_foreach_srv(srv_notify_connect);
                 break;
@@ -299,7 +318,7 @@ srv_handle_ble_event(ble_evt_t *evt)
         case BLE_GATTS_EVT_WRITE:
                 s = srv_find_by_uuid(&evt->evt.gatts_evt.params.write.context.srvc_uuid);
                 c = srv_find_char_by_uuid(s, &evt->evt.gatts_evt.params.write.context.char_uuid);
-                c->write_cb(s, c, evt->evt.gatts_evt.params.write.data);
+                c->write_cb(s, c, evt->evt.gatts_evt.params.write.data, evt->evt.gatts_evt.params.write.len);
                 break;
         }
 }

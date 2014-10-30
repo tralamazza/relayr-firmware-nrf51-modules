@@ -22,7 +22,8 @@ enum vendor_uuid {
 struct char_desc;
 struct service_desc;
 
-typedef void (char_write_cb_t)(struct service_desc *s, struct char_desc *c, const void *val);
+typedef void (char_write_cb_t)(struct service_desc *s, struct char_desc *c, const void *val, const uint16_t len);
+typedef void (char_read_cb_t)(struct service_desc *s, struct char_desc *c, void *val, uint16_t *len);
 typedef void (connect_cb_t)(struct service_desc *s);
 typedef void (disconnect_cb_t)(struct service_desc *s);
 
@@ -34,6 +35,7 @@ struct char_desc {
         uint16_t handle;
         ble_gatts_char_pf_t format;
         char_write_cb_t *write_cb;
+        char_read_cb_t *read_cb;
         void *data;
 };
 
