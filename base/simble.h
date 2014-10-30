@@ -55,10 +55,10 @@ void simble_adv_start(void);
 uint8_t simble_get_vendor_uuid_class(void);
 void simble_process_event_loop(void);
 
-void srv_register(struct service_desc *s);
-void srv_init(struct service_desc *s, uint8_t type, uint16_t id);
-void srv_char_add(struct service_desc *s, struct char_desc *c, uint8_t type, uint16_t id, const char *desc, uint16_t length);
-void srv_char_attach_format(struct char_desc *c, uint8_t format, int8_t exponent, uint16_t unit);
-void srv_char_update(struct char_desc *c, void *val);
+void simble_srv_register(struct service_desc *s);
+void simble_srv_init(struct service_desc *s, uint8_t type, uint16_t id);
+void simble_srv_char_add(struct service_desc *s, struct char_desc *c, uint8_t type, uint16_t id, const char *desc, uint16_t length);
+void simble_srv_char_attach_format(struct char_desc *c, uint8_t format, int8_t exponent, uint16_t unit);
+void simble_srv_char_update(struct char_desc *c, void *val);
 
 #endif

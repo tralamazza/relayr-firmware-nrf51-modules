@@ -31,11 +31,11 @@ ind_init(void)
 {
         struct indicator_ctx *ctx = &ind_ctx;
 
-        srv_init(ctx, simble_get_vendor_uuid_class(), VENDOR_UUID_IND_SERVICE);
-        srv_char_add(ctx, &ctx->ind,
+        simble_srv_init(ctx, simble_get_vendor_uuid_class(), VENDOR_UUID_IND_SERVICE);
+        simble_srv_char_add(ctx, &ctx->ind,
                      simble_get_vendor_uuid_class(), VENDOR_UUID_IND_CHAR,
                      u8"Indicator LED",
                      1);
         ctx->ind.write_cb = ind_write_cb;
-        srv_register(ctx);
+        simble_srv_register(ctx);
 }

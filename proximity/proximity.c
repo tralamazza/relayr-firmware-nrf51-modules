@@ -16,7 +16,7 @@ struct proximity_ctx {
 static void
 proximity_update(struct proximity_ctx *ctx, uint16_t val)
 {
-        srv_char_update(&ctx->proximity, &val);
+        simble_srv_char_update(&ctx->proximity, &val);
 }
 
 static void
@@ -43,8 +43,8 @@ proximity_disconnected(struct service_desc *s)
 static void
 proximity_init(struct proximity_ctx *ctx)
 {
-        srv_init(ctx, simble_get_vendor_uuid_class(), VENDOR_UUID_SENSOR_SERVICE);
-        srv_char_add(ctx, &ctx->proximity,
+        simble_srv_init(ctx, simble_get_vendor_uuid_class(), VENDOR_UUID_SENSOR_SERVICE);
+        simble_srv_char_add(ctx, &ctx->proximity,
                      simble_get_vendor_uuid_class(), VENDOR_UUID_PROXIMITY_CHAR,
                      u8"Proximity",
                      2);
@@ -54,7 +54,7 @@ proximity_init(struct proximity_ctx *ctx)
         /*                        0); */
         ctx->connect_cb = proximity_connected;
         ctx->disconnect_cb = proximity_disconnected;
-        srv_register(ctx);
+        simble_srv_register(ctx);
 }
 
 

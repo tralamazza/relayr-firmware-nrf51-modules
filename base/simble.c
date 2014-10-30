@@ -142,7 +142,7 @@ simble_get_vendor_uuid_class(void)
 }
 
 void
-srv_register(struct service_desc *s)
+simble_srv_register(struct service_desc *s)
 {
         s->next = services;
         services = s;
@@ -193,7 +193,7 @@ srv_register(struct service_desc *s)
 }
 
 void
-srv_init(struct service_desc *s, uint8_t type, uint16_t id)
+simble_srv_init(struct service_desc *s, uint8_t type, uint16_t id)
 {
         *s = (struct service_desc){
                 .uuid = {.type = type,
@@ -203,7 +203,7 @@ srv_init(struct service_desc *s, uint8_t type, uint16_t id)
 };
 
 void
-srv_char_add(struct service_desc *s, struct char_desc *c, uint8_t type, uint16_t id, const char *desc, uint16_t length)
+simble_srv_char_add(struct service_desc *s, struct char_desc *c, uint8_t type, uint16_t id, const char *desc, uint16_t length)
 {
         *c = (struct char_desc){
                 .uuid = {
@@ -217,7 +217,7 @@ srv_char_add(struct service_desc *s, struct char_desc *c, uint8_t type, uint16_t
 }
 
 void
-srv_char_attach_format(struct char_desc *c, uint8_t format, int8_t exponent, uint16_t unit)
+simble_srv_char_attach_format(struct char_desc *c, uint8_t format, int8_t exponent, uint16_t unit)
 {
         c->format = (ble_gatts_char_pf_t){
                 .format = format,
@@ -227,7 +227,7 @@ srv_char_attach_format(struct char_desc *c, uint8_t format, int8_t exponent, uin
 }
 
 void
-srv_char_update(struct char_desc *c, void *val)
+simble_srv_char_update(struct char_desc *c, void *val)
 {
         uint16_t len = c->length;
         sd_ble_gatts_value_set(c->handle, 0, &len, val);
