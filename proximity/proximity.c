@@ -6,10 +6,13 @@
 #include "simble.h"
 #include "indicator.h"
 
+#include "tcs3771.h"
+
 
 struct proximity_ctx {
         struct service_desc;
         struct char_desc proximity;
+        uint16_t proximity_value;
 };
 
 
@@ -22,22 +25,23 @@ proximity_update(struct proximity_ctx *ctx, uint16_t val)
 static void
 proximity_connected(struct service_desc *s)
 {
-        struct proximity_ctx *ctx = (void *)s;
-        uint8_t cmd = 0xa0 | 0x12;
-        uint16_t val;
-
-        twi_master_transfer((0x29 << 1), &cmd, 1, TWI_DONT_ISSUE_STOP);
-        twi_master_transfer((0x29 << 1) | TWI_READ_BIT, (void *)&val, 2, TWI_ISSUE_STOP);
-
-        proximity_update(ctx, val);
+        tcs3771_init();
 }
 
 static void
 proximity_disconnected(struct service_desc *s)
 {
+        /* XXX switch off sensor/twi */
+}
+
+static void
+proximity_read(struct service_desc *s, struct char_desc *c, void **valp, uint16_t *lenp)
+{
         struct proximity_ctx *ctx = (void *)s;
 
-        /* XXX switch off sensor/twi */
+        ctx->proximity_value = tcs3771_proximity_data();
+        *lenp = sizeof(ctx->proximity_value);
+        *valp = &ctx->proximity_value;
 }
 
 static void
@@ -48,6 +52,7 @@ proximity_init(struct proximity_ctx *ctx)
                      simble_get_vendor_uuid_class(), VENDOR_UUID_PROXIMITY_CHAR,
                      u8"Proximity",
                      2);
+        ctx->proximity.read_cb = proximity_read;
         /* srv_char_attach_format(&ctx->proximity, */
         /*                        BLE_GATT_CPF_FORMAT_UINT16, */
         /*                        0, */
