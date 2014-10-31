@@ -9,10 +9,6 @@
 #include "htu21.h"
 
 
-#define ORG__BLUETOOTH__UNIT__THERMODYNAMIC_TEMPERATURE__DEGREE_CELSIUS 0x272f
-#define ORG__BLUETOOTH__UNIT__PERCENTAGE 0x27AD
-
-
 struct rh_ctx {
 	struct service_desc;
 	struct char_desc rh;
@@ -67,7 +63,7 @@ rh_init(struct rh_ctx *ctx)
 	simble_srv_char_attach_format(&ctx->rh,
 		BLE_GATT_CPF_FORMAT_UINT8,
 		0,
-		ORG__BLUETOOTH__UNIT__PERCENTAGE);
+		ORG_BLUETOOTH_UNIT_PERCENTAGE);
 	ctx->connect_cb = rh_connected;
 	ctx->rh.read_cb = rh_read_cb;
 	simble_srv_register(ctx);
@@ -114,7 +110,7 @@ temp_init(struct temp_ctx *ctx)
 	simble_srv_char_attach_format(&ctx->temp,
 		BLE_GATT_CPF_FORMAT_SINT8,
 		0,
-		ORG__BLUETOOTH__UNIT__THERMODYNAMIC_TEMPERATURE__DEGREE_CELSIUS);
+		ORG_BLUETOOTH_UNIT_DEGREE_CELSIUS);
 	ctx->connect_cb = temp_connected;
 	ctx->temp.read_cb = temp_read_cb;
 	simble_srv_register(ctx);

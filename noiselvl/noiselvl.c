@@ -8,7 +8,6 @@
 #include "indicator.h"
 #include "onboard-led.h"
 
-#define ORG__BLUETOOTH__UNIT__UNITLESS 0x2700
 
 enum noise_level_pins {
 	noise_level_pin_CONVERTER = 11,
@@ -93,6 +92,7 @@ static void
 noiselvl_connected(struct service_desc *s)
 {
 	enable_converter(true);
+	// TODO add 50ms delay
 	adc_read_start();
 }
 
@@ -122,7 +122,7 @@ noiselvl_init(struct noiselvl_ctx* ctx)
 	simble_srv_char_attach_format(&ctx->noiselvl,
 		BLE_GATT_CPF_FORMAT_UINT16,
 		0,
-		ORG__BLUETOOTH__UNIT__UNITLESS);
+		ORG_BLUETOOTH_UNIT_UNITLESS);
 	ctx->connect_cb = noiselvl_connected;
 	ctx->disconnect_cb = noiselvl_disconnected;
 	ctx->noiselvl.read_cb = noiselvl_read_cb;

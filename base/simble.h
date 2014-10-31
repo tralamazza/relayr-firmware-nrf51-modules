@@ -17,6 +17,11 @@ enum vendor_uuid {
         VENDOR_UUID_IND_CHAR = 0x2309,
 };
 
+enum org_bluetooth_unit {
+        ORG_BLUETOOTH_UNIT_UNITLESS = 0x2700,
+        ORG_BLUETOOTH_UNIT_DEGREE_CELSIUS = 0x272f,
+        ORG_BLUETOOTH_UNIT_PERCENTAGE = 0x27AD,
+};
 
 struct char_desc;
 struct service_desc;
