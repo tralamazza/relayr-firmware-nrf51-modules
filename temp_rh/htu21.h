@@ -1,5 +1,5 @@
-#ifndef HTU21__
-#define HTU21__
+#ifndef HTU21_H
+#define HTU21_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -41,4 +41,4 @@ bool htu21_read_humidity(uint8_t *value);
 bool htu21_read_user_register(struct htu21_user_register_t* user_reg);
 bool htu21_write_user_register(struct htu21_user_register_t* user_reg);
 
-#endif /* HTU21__ */
+#endif /* HTU21_H */

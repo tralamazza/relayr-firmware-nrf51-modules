@@ -91,14 +91,6 @@ static void
 temp_connected(struct service_desc *s)
 {
 	temp_char_srv_update((struct temp_ctx *) s);
-	NRF_RTC1->TASKS_CLEAR = 1;
-	NRF_RTC1->TASKS_START = 1;
-}
-
-static void
-temp_disconnected(struct service_desc *s)
-{
-	NRF_RTC1->TASKS_STOP = 1;
 }
 
 static void
@@ -124,30 +116,8 @@ temp_init(struct temp_ctx *ctx)
 		0,
 		ORG__BLUETOOTH__UNIT__THERMODYNAMIC_TEMPERATURE__DEGREE_CELSIUS);
 	ctx->connect_cb = temp_connected;
-	ctx->disconnect_cb = temp_disconnected;
 	ctx->temp.read_cb = temp_read_cb;
 	simble_srv_register(ctx);
-}
-
-static void
-lfclk_init(void)
-{
-	NRF_CLOCK->LFCLKSRC = (CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos);
-	NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
-	NRF_CLOCK->TASKS_LFCLKSTART = 1;
-	while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {
-	}
-	NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
-}
-
-static void
-rtc_init(void)
-{
-	NRF_RTC1->PRESCALER = (32768u / 1u) - 1u; // 1Hz, prescaler = (32768 / 1Hz) - 1
-	NRF_RTC1->INTENSET = RTC_INTENSET_TICK_Msk;
-	sd_nvic_ClearPendingIRQ(RTC1_IRQn);
-	sd_nvic_SetPriority(RTC1_IRQn, 3);
-	sd_nvic_EnableIRQ(RTC1_IRQn);
 }
 
 
@@ -165,8 +135,6 @@ void
 main(void)
 {
 	twi_master_init();
-	rtc_init();
-	lfclk_init();
 
 	simble_init("Temperature/RH");
 	ind_init();
