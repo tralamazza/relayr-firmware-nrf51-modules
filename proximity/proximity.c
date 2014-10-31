@@ -31,7 +31,7 @@ proximity_connected(struct service_desc *s)
 static void
 proximity_disconnected(struct service_desc *s)
 {
-        /* XXX switch off sensor/twi */
+        tcs3771_stop();
 }
 
 static void

@@ -80,8 +80,33 @@ tcs3771_init(void)
         };
         tcs3771_write_register(TCS3771_PPULSE, data2, sizeof(data2));
 
+        uint8_t data3[] = {
+                10
+        };
+        tcs3771_write_register(TCS3771_WTIME, data3, sizeof(data3));
+
+        uint16_t data4[] = {
+                0x130,          /* lower limit */
+                0x170           /* high limit */
+        };
+        tcs3771_write_register(TCS3771_PILT, data4, sizeof(data4));
+
+        uint8_t data5[] = {
+                TCS3771_PERS_PPERS(10)
+        };
+        tcs3771_write_register(TCS3771_PERS, data5, sizeof(data5));
+
         uint8_t data1[] = {
-                TCS3771_ENABLE_PON | TCS3771_ENABLE_PEN | TCS3771_ENABLE_WEN
+                TCS3771_ENABLE_PON | TCS3771_ENABLE_PEN | TCS3771_ENABLE_WEN | TCS3771_ENABLE_PIEN
+        };
+        tcs3771_write_register(TCS3771_ENABLE, data1, sizeof(data1));
+}
+
+void
+tcs3771_stop(void)
+{
+        uint8_t data1[] = {
+                0
         };
         tcs3771_write_register(TCS3771_ENABLE, data1, sizeof(data1));
 }
