@@ -38,6 +38,16 @@ ADC_IRQHandler(void)
 }
 
 static void
+adc_config()
+{
+	NRF_ADC->CONFIG = (ADC_CONFIG_RES_10bit << ADC_CONFIG_RES_Pos) |
+			(ADC_CONFIG_INPSEL_AnalogInputNoPrescaling << ADC_CONFIG_INPSEL_Pos) |
+			(ADC_CONFIG_REFSEL_VBG << ADC_CONFIG_REFSEL_Pos) |
+			(ADC_CONFIG_PSEL_AnalogInput7 << ADC_CONFIG_PSEL_Pos) |
+			(ADC_CONFIG_EXTREFSEL_None << ADC_CONFIG_EXTREFSEL_Pos);
+}
+
+static void
 adc_read_start()
 {
 	NRF_ADC->EVENTS_END = 0;
@@ -45,6 +55,7 @@ adc_read_start()
 	sd_nvic_ClearPendingIRQ(ADC_IRQn);
 	sd_nvic_SetPriority(ADC_IRQn, NRF_APP_PRIORITY_LOW);
 	sd_nvic_EnableIRQ(ADC_IRQn);
+	adc_config();
 	NRF_ADC->ENABLE = ADC_ENABLE_ENABLE_Enabled;
 	NRF_ADC->TASKS_START = 1;
 }
@@ -58,11 +69,7 @@ adc_read_blocking()
 	NRF_ADC->EVENTS_END = 0;
 	sd_nvic_DisableIRQ(ADC_IRQn);
 	NRF_ADC->INTENCLR = ADC_INTENCLR_END_Enabled;
-	NRF_ADC->CONFIG = (ADC_CONFIG_RES_10bit << ADC_CONFIG_RES_Pos) |
-			(ADC_CONFIG_INPSEL_AnalogInputNoPrescaling << ADC_CONFIG_INPSEL_Pos) |
-			(ADC_CONFIG_REFSEL_VBG << ADC_CONFIG_REFSEL_Pos) |
-			(ADC_CONFIG_PSEL_AnalogInput7 << ADC_CONFIG_PSEL_Pos) |
-			(ADC_CONFIG_EXTREFSEL_None << ADC_CONFIG_EXTREFSEL_Pos);
+	adc_config();
 	NRF_ADC->ENABLE = ADC_ENABLE_ENABLE_Enabled;
 	NRF_ADC->TASKS_START = 1;
 	while (NRF_ADC->EVENTS_END == 0) {
