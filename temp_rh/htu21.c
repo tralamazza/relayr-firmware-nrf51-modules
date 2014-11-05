@@ -1,9 +1,7 @@
 #include <twi_master.h>
 
 #include "htu21.h"
-
-
-#define ROUNDED_DIV(A, B) (((A) + ((B) / 2)) / (B))
+#include "util.h"
 
 static inline uint8_t rotl(uint8_t value, uint8_t shift)
 {
