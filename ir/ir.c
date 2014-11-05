@@ -4,7 +4,6 @@
 
 #include "simble.h"
 #include "indicator.h"
-#include "onboard-led.h"
 #include "protocol.h"
 
 
