@@ -15,6 +15,7 @@ enum vendor_uuid {
         VENDOR_UUID_COLOR_CHAR = 0x2307,
         VENDOR_UUID_PROXIMITY_CHAR = 0x2308,
         VENDOR_UUID_IND_CHAR = 0x2309,
+        VENDOR_UUID_IR_CHAR = 0x2310,
 };
 
 enum org_bluetooth_unit {
