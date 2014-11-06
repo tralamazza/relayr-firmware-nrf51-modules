@@ -38,7 +38,6 @@ static inline void
 pulse(uint32_t num)
 {
 	NRF_TIMER2->CC[0] = num;
-	NRF_GPIO->OUTSET = 1 << context.led_pin; // XXX test against manually activating the gpiote task
 	NRF_TIMER1->TASKS_START = 1;
 }
 
@@ -147,9 +146,10 @@ protocol_init(struct ir_protocol *protocol, uint8_t led_pin)
 	NRF_TIMER1->PRESCALER = 4;
 	NRF_TIMER1->MODE = TIMER_MODE_MODE_Timer;
 	NRF_TIMER1->BITMODE = TIMER_BITMODE_BITMODE_16Bit;
-	NRF_TIMER1->SHORTS = TIMER_SHORTS_COMPARE1_CLEAR_Msk;
-	NRF_TIMER1->CC[0] = ROUNDED_DIV(context.protocol->pulse_width, 2);
-	NRF_TIMER1->CC[1] = context.protocol->pulse_width;
+	NRF_TIMER1->SHORTS = TIMER_SHORTS_COMPARE2_CLEAR_Msk;
+	NRF_TIMER1->CC[0] = 1;
+	NRF_TIMER1->CC[1] = ROUNDED_DIV(context.protocol->pulse_width, 3);
+	NRF_TIMER1->CC[2] = context.protocol->pulse_width;
 
 	// timer2 (counter)
 	NRF_TIMER2->TASKS_STOP = 1;
@@ -168,7 +168,7 @@ protocol_init(struct ir_protocol *protocol, uint8_t led_pin)
 	// ppi's
 	sd_ppi_channel_assign(0, &NRF_TIMER1->EVENTS_COMPARE[0], &NRF_GPIOTE->TASKS_OUT[0]); // toggle led
 	sd_ppi_channel_assign(1, &NRF_TIMER1->EVENTS_COMPARE[1], &NRF_GPIOTE->TASKS_OUT[0]); // toggle led
-	sd_ppi_channel_assign(2, &NRF_TIMER1->EVENTS_COMPARE[1], &NRF_TIMER2->TASKS_COUNT); // inc timer2
+	sd_ppi_channel_assign(2, &NRF_TIMER1->EVENTS_COMPARE[2], &NRF_TIMER2->TASKS_COUNT); // inc timer2
 	sd_ppi_channel_assign(3, &NRF_TIMER2->EVENTS_COMPARE[0], &NRF_TIMER1->TASKS_STOP); // stops timer1 after timer2 reaches N
 	sd_ppi_channel_enable_set(PPI_CHEN_CH0_Msk |
 		PPI_CHEN_CH1_Msk |
