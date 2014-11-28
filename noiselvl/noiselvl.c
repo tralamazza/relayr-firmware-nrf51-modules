@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include <nrf_gpio.h>
-#include <twi_master.h>
 
 #include "simble.h"
 #include "indicator.h"
@@ -140,7 +139,6 @@ gpio_init(void)
 void
 main(void)
 {
-	twi_master_init();
 	gpio_init();
 
 	simble_init("Noise level");
