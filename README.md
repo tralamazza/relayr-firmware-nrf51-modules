@@ -1,8 +1,8 @@
-# The WunderBar Sensor Modules Firmware Repository
+# The WunderBar Sensor Modules Firmware Repository - Preliminary Stages of Development
 
-Welcome to the Sensor Modules Firmware Repository. This repository contains the latest version of the WunderBar sensor modules firmware. Please note that this version of the firmware *does not* currently run on the sensor modules, due to a number of hardware limitations. This will be the firmware available on the sensor modules once the new hardware version of the WunderBar is released, in the first quarter of 2015.
+Welcome to the Sensor Modules Firmware Repository. This repository contains the latest version of the WunderBar sensor modules firmware. Please note that this version of the firmware ***does not*** currently run on the sensor modules, due to a number of hardware limitations. This *will be* the firmware available on the sensor modules once the new hardware version of the WunderBar is released, in the first quarter of 2015.
 
-This firmware version is a "work in progress" and currently only includes the basic functionality of retrieving values from the sensor. 
+**This firmware version is a "work in progress" and currently only includes the basic functionality of retrieving values from the sensor.**
 
 Despite the fact that it isn't currently available on the sensor modules, you could still use this firmware version. To do that you would need to make sure perquisites are met.
 
