@@ -22,6 +22,7 @@ The connector should be soldered to the board in the following manner:
 
 - Obtain a license for the [nRF SDK](https://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF51822), soft device version 7. You can obtain a license when buying a development kit.
 
+- Download the [GNU Tools for ARM Embedded Processors](https://launchpad.net/gcc-arm-embedded), unpack it and add its "/bin" folder to your $PATH
 
 ## Installing the firmware
 
