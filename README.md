@@ -22,17 +22,18 @@ The connector should be soldered to the board in the following manner:
 
 - Obtain a license for the [nRF SDK](https://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF51822), soft device version 7. You can obtain a license when buying a development kit.
 
-- Download the [GNU Tools for ARM Embedded Processors](https://launchpad.net/gcc-arm-embedded), unpack it and add its "/bin" folder to your $PATH
+- Download the [GNU Tools for ARM Embedded Processors](https://launchpad.net/gcc-arm-embedded), unpack it and add its ```/bin``` folder to your ```$PATH```
 
 ## Installing the firmware
 
 1. Clone the repository on your local machine. Each folder contains a different module which is denoted by the name of the folder.
-2. Initialize and update it using the following: 
-	
+2. Initialize and update it using the following:
+
 	`git submodule init` 
 and 
 	`git submodule update`
 
-3. Download the [nRF SDK](https://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF51822) and extract it in the respective folder.
-4. Navigate to the folder of the sensor you wish to flash.
-5. Flash the software by typing `make flash` 
+3. Download the [nRF SDK](https://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF51822) and extract it into ```nrf51-sdk```.
+4. Navigate to the folder of the sensor you wish to flash (e.g. ```cd temp_rh```).
+5. Flash the application by typing `make flash`.
+6. [OPTIONAL] You might need to flash the softdevice version 7. Download the S110 softdevice from Nordic, unpack the S110 hex file to your application folder and type ```make flash-all``.
