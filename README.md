@@ -14,7 +14,7 @@ Despite the fact that it isn't currently available on the sensor modules, you co
 
 The connector should be soldered to the board in the following manner:
 
-<img src="assets/connector.jpg" width=500px> 
+<img src="docs/images/connector.jpg" width=500px> 
 
 
 - Connect the connector to a Segger flasher. You could use [this one](https://www.segger.com/jlink-lite-cortexm.html), for instance.
@@ -26,7 +26,7 @@ The connector should be soldered to the board in the following manner:
 
 ## Installing the firmware
 
-1. Clone the repository on your local machine. Each folder contains a different module which is denoted by the name of the folder.
+1. Clone the repository on your local machine.
 2. Initialize and update it using the following:
 
 	`git submodule init` 
@@ -34,6 +34,6 @@ and
 	`git submodule update`
 
 3. Download the [nRF SDK](https://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF51822) and extract it into ```nrf51-sdk```.
-4. Navigate to the folder of the sensor you wish to flash (e.g. ```cd temp_rh```).
+4. Navigate to the folder of the sensor you wish to flash (e.g. ```cd wunderbar/temp_rh```).
 5. Flash the application by typing `make flash`.
-6. [OPTIONAL] You might need to flash the softdevice version 7. Download the S110 softdevice from Nordic, unpack the S110 hex file to your application folder and type ```make flash-all```.
+6. [OPTIONAL] You might need to flash the softdevice. Download the S110 softdevice **v7** from Nordic, unpack the S110 hex file into your application folder and type ```make flash-all```.

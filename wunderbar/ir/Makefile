@@ -3,4 +3,4 @@ SRCS= ir.c protocol.c
 
 CFLAGS+= -I.
 
-include ../build.mk
+include ../../build.mk
