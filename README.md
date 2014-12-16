@@ -36,4 +36,4 @@ and
 3. Download the [nRF SDK](https://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF51822) and extract it into ```nrf51-sdk```.
 4. Navigate to the folder of the sensor you wish to flash (e.g. ```cd temp_rh```).
 5. Flash the application by typing `make flash`.
-6. [OPTIONAL] You might need to flash the softdevice version 7. Download the S110 softdevice from Nordic, unpack the S110 hex file to your application folder and type ```make flash-all``.
+6. [OPTIONAL] You might need to flash the softdevice version 7. Download the S110 softdevice from Nordic, unpack the S110 hex file to your application folder and type ```make flash-all```.
