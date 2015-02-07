@@ -28,6 +28,7 @@ struct ble_gap_ad_name {
 
 
 static struct service_desc *services;
+static uint16_t current_conn_handle = BLE_CONN_HANDLE_INVALID;
 
 
 static uint32_t
@@ -116,6 +117,11 @@ simble_init(const char *name)
         sd_softdevice_enable(NRF_CLOCK_LFCLKSRC_XTAL_20_PPM, NULL); /* XXX assertion handler */
 
         ble_enable_params_t ble_params = {
+#if defined(SD120)
+                .gap_enable_params = {
+                        .role = BLE_GAP_ROLE_PERIPH,
+                },
+#endif
                 .gatts_enable_params = {
                         .service_changed = 1,
                 },
@@ -231,8 +237,17 @@ simble_srv_char_attach_format(struct char_desc *c, uint8_t format, int8_t expone
 void
 simble_srv_char_update(struct char_desc *c, void *val)
 {
+#if defined(SD120)
+        ble_gatts_value_t vt = {
+                .len = c->length,
+                .offset = 0,
+                .p_value = val
+        };
+        sd_ble_gatts_value_set(current_conn_handle, c->handle, &vt);
+#else
         uint16_t len = c->length;
         sd_ble_gatts_value_set(c->handle, 0, &len, val);
+#endif
 }
 
 static struct service_desc *
@@ -312,9 +327,11 @@ srv_handle_ble_event(ble_evt_t *evt)
                 break;
         }
         case BLE_GAP_EVT_CONNECTED:
+                current_conn_handle = evt->evt.gap_evt.conn_handle;
                 srv_foreach_srv(srv_notify_connect);
                 break;
         case BLE_GAP_EVT_DISCONNECTED:
+                current_conn_handle = BLE_CONN_HANDLE_INVALID;
                 srv_foreach_srv(srv_notify_disconnect);
                 break;
         case BLE_GATTS_EVT_WRITE:
