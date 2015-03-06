@@ -79,6 +79,7 @@ main(void)
 	simble_init("IR transmitter");
 	protocol_init(&nec, IR_PIN_OUT);
 	ind_init();
+	batt_serv_init();
 	ir_init(&ir_ctx);
 	simble_adv_start();
 	simble_process_event_loop();

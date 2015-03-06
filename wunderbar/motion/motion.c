@@ -74,6 +74,7 @@ main(void)
 
         simble_init("motion");
         ind_init();
+        batt_serv_init();
         motion_init(&motion_ctx);
         simble_adv_start();
 

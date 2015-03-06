@@ -72,6 +72,7 @@ main(void)
 
         simble_init("proximity");
         ind_init();
+        batt_serv_init();
         proximity_init(&proximity_ctx);
         simble_adv_start();
 

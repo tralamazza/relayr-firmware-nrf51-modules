@@ -5,6 +5,7 @@
 
 #include "simble.h"
 #include "indicator.h"
+#include "batt_serv.h"
 #include "onboard-led.h"
 
 
@@ -143,6 +144,7 @@ main(void)
 
 	simble_init("Noise level");
 	ind_init();
+	batt_serv_init();
 	noiselvl_init(&noiselvl_ctx);
 	simble_adv_start();
 	simble_process_event_loop();

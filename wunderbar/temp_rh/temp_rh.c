@@ -134,6 +134,7 @@ main(void)
 
 	simble_init("Temperature/RH");
 	ind_init();
+	batt_serv_init();
 	rh_init(&rh_ctx);
 	temp_init(&temp_ctx);
 	simble_adv_start();
