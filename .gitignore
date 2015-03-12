@@ -4,3 +4,4 @@
 *.hex
 *.jlink
 *.map
+*.d
