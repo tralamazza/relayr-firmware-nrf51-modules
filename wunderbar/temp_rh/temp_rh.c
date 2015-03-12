@@ -7,6 +7,7 @@
 #include "indicator.h"
 #include "onboard-led.h"
 #include "htu21.h"
+#include "batt_serv.h"
 
 
 struct rh_ctx {

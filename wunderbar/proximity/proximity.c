@@ -5,6 +5,7 @@
 
 #include "simble.h"
 #include "indicator.h"
+#include "batt_serv.h"
 
 #include "tcs3771.h"
 

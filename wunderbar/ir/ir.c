@@ -5,6 +5,7 @@
 #include "simble.h"
 #include "indicator.h"
 #include "protocol.h"
+#include "batt_serv.h"
 
 
 struct ir_ctx {
