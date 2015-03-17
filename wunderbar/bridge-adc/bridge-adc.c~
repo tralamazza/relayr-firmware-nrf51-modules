@@ -76,5 +76,6 @@ main(void)
         bridge_adc_init(&bridge_adc_ctx);
 
         simble_adv_start();
+	segger_rtt_printf("simble_adv_start\n");
         simble_process_event_loop();
 }
