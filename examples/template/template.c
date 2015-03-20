@@ -1,5 +1,6 @@
 #include "simble.h"
-
+#include "onboard-led.h"
+#include "rtc.h"
 
 struct my_service_ctx {
         struct service_desc;
@@ -59,6 +60,11 @@ void
 main(void)
 {
 	simble_init("relayr"); // init BLE library
+
+  NRF_GPIO->PIN_CNF[2] = GPIO_PIN_CNF_DIR_Output;
+  NRF_GPIO->PIN_CNF[1] = GPIO_PIN_CNF_DIR_Output;
+  rtc_init();
+
 	my_service_init(&my_service_ctx);
 	simble_adv_start(); // start advertising
 	simble_process_event_loop(); // main loop (stuck here)
