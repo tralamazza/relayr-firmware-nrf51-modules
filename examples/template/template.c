@@ -56,6 +56,13 @@ my_service_init(struct my_service_ctx *ctx)
 
 static struct my_service_ctx my_service_ctx;
 
+
+static void
+notif_timer_cb(struct rtc_ctx *ctx)
+{
+  //simble_srv_char_update(&ctx->temp, &ctx->last_reading);
+}
+
 void
 main(void)
 {
@@ -63,7 +70,13 @@ main(void)
 
   NRF_GPIO->PIN_CNF[2] = GPIO_PIN_CNF_DIR_Output;
   NRF_GPIO->PIN_CNF[1] = GPIO_PIN_CNF_DIR_Output;
-  rtc_init();
+
+  struct rtc_ctx rtc_ctx = {.used_timers = 1,
+                            .rtc_x[0].period = 1000,
+                            .rtc_x[0].enabled = 1,
+                            .rtc_x[0].cb = notif_timer_cb
+                            };
+  rtc_init(&rtc_ctx);
 
 	my_service_init(&my_service_ctx);
 	simble_adv_start(); // start advertising
