@@ -124,8 +124,10 @@ static struct temp_ctx temp_ctx;
 
 
 static void
-notif_timer_cb()
+notif_timer_cb(struct rtc_ctx *ctx)
 {
+	NRF_GPIO->OUT ^= (1 << 1);
+	temp_ctx.last_reading++; /*XXX:Only for test!*/
 	temp_char_srv_update(&temp_ctx);
 	rh_char_srv_update(&rh_ctx);
 }
@@ -135,15 +137,21 @@ main(void)
 {
 	twi_master_init();
 
+	simble_init("Temperature/RH");
+
+	NRF_GPIO->PIN_CNF[2] = GPIO_PIN_CNF_DIR_Output;
+  NRF_GPIO->PIN_CNF[1] = GPIO_PIN_CNF_DIR_Output;
 	//Set the timer parameters and initialize it.
   struct rtc_ctx rtc_ctx = {
       .rtc_x[0].period = 500,
       .rtc_x[0].enabled = 1,
       .rtc_x[0].cb = notif_timer_cb
   };
+	// NOTE: rtc_init needs to be called AFTER simble_init which leaves
+	//		the SoftDevice to configure the LFCLKSRC to the external XTAL
   rtc_init(&rtc_ctx);
 
-	simble_init("Temperature/RH");
+
 	ind_init();
 	batt_serv_init();
 	rh_init(&rh_ctx);

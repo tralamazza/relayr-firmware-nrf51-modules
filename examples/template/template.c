@@ -78,6 +78,8 @@ main(void)
       .rtc_x[0].enabled = 1,
       .rtc_x[0].cb = notif_timer_cb
   };
+  // NOTE: rtc_init needs to be called AFTER simble_init which configures
+  //      the LFCLKSRC
   rtc_init(&rtc_ctx);
 
 	my_service_init(&my_service_ctx);
