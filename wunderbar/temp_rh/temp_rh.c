@@ -8,6 +8,7 @@
 #include "onboard-led.h"
 #include "htu21.h"
 #include "batt_serv.h"
+#include "rtc.h"
 
 
 struct rh_ctx {
@@ -122,7 +123,8 @@ static struct rh_ctx rh_ctx;
 static struct temp_ctx temp_ctx;
 
 
-void RTC1_IRQHandler()
+static void
+notif_timer_cb()
 {
 	temp_char_srv_update(&temp_ctx);
 	rh_char_srv_update(&rh_ctx);
@@ -132,6 +134,14 @@ void
 main(void)
 {
 	twi_master_init();
+
+	//Set the timer parameters and initialize it.
+  struct rtc_ctx rtc_ctx = {
+      .rtc_x[0].period = 500,
+      .rtc_x[0].enabled = 1,
+      .rtc_x[0].cb = notif_timer_cb
+  };
+  rtc_init(&rtc_ctx);
 
 	simble_init("Temperature/RH");
 	ind_init();
