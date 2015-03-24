@@ -103,7 +103,7 @@ temp_read_cb(struct service_desc *s, struct char_desc *c, void **val, uint16_t *
 static void
 temp_init(struct temp_ctx *ctx)
 {
-	simble_srv_init(ctx, simble_get_vendor_uuid_class(), VENDOR_UUID_SENSOR_SERVICE);
+	simble_srv_init(ctx, simble_get_vendor_uuid_class(), VENDOR_UUID_SENSOR_TEMP_SERVICE);
 	simble_srv_char_add(ctx, &ctx->temp,
 		simble_get_vendor_uuid_class(), VENDOR_UUID_TEMP_CHAR,
 		u8"Temperature",
