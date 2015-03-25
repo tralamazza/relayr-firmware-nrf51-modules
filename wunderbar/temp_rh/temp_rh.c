@@ -68,6 +68,7 @@ rh_init(struct rh_ctx *ctx)
 		ORG_BLUETOOTH_UNIT_PERCENTAGE);
 	ctx->connect_cb = rh_connected;
 	ctx->rh.read_cb = rh_read_cb;
+	ctx->rh.notify = 1;
 	simble_srv_register(ctx);
 }
 
@@ -104,7 +105,7 @@ temp_read_cb(struct service_desc *s, struct char_desc *c, void **val, uint16_t *
 static void
 temp_init(struct temp_ctx *ctx)
 {
-	simble_srv_init(ctx, simble_get_vendor_uuid_class(), VENDOR_UUID_SENSOR_SERVICE);
+	simble_srv_init(ctx, simble_get_vendor_uuid_class(), VENDOR_UUID_SENSOR_TEMP_SERVICE);
 	simble_srv_char_add(ctx, &ctx->temp,
 		simble_get_vendor_uuid_class(), VENDOR_UUID_TEMP_CHAR,
 		u8"Temperature",
@@ -115,6 +116,7 @@ temp_init(struct temp_ctx *ctx)
 		ORG_BLUETOOTH_UNIT_DEGREE_CELSIUS);
 	ctx->connect_cb = temp_connected;
 	ctx->temp.read_cb = temp_read_cb;
+	ctx->temp.notify = 1;
 	simble_srv_register(ctx);
 }
 
@@ -128,8 +130,11 @@ notif_timer_cb(struct rtc_ctx *ctx)
 {
 	NRF_GPIO->OUT ^= (1 << 1);
 	temp_ctx.last_reading++; /*XXX:Only for test!*/
-	temp_char_srv_update(&temp_ctx);
-	rh_char_srv_update(&rh_ctx);
+
+  simble_srv_char_notify(&temp_ctx.temp, 0, 1, &temp_ctx.last_reading);
+	simble_srv_char_notify(&rh_ctx.temp, 0, 1, &rh_ctx.last_reading);
+
+
 }
 
 void
