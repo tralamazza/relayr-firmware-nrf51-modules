@@ -74,6 +74,10 @@ my_service_init(struct my_service_ctx *ctx)
 		sizeof(&ctx->sampling_rate)); // size in bytes
         // Resolution: 1ms, max value: 16777216 (4 hours)
         // A value of 0 will disable periodic notifications
+  simble_srv_char_attach_format(&ctx->sampling_rate_char,
+		BLE_GATT_CPF_FORMAT_UINT24,
+		0,
+    ORG_BLUETOOTH_UNIT_UNITLESS);
 
 	// BLE callbacks (optional)
 	ctx->connect_cb = template_connect_cb;
@@ -95,7 +99,7 @@ notif_timer_cb(struct rtc_ctx *ctx)
 {
   NRF_GPIO->OUT ^= (1 << 1);
   my_service_ctx.my_sensor_value++;
-  simble_srv_char_notify(&my_service_ctx.my_char_data, 0, 1, &my_service_ctx.my_sensor_value);
+  simble_srv_char_notify(&my_service_ctx.my_char_data, false, 1, &my_service_ctx.my_sensor_value);
 }
 
 void
