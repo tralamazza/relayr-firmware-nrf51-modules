@@ -51,6 +51,7 @@ my_service_init(struct my_service_ctx *ctx)
 	ctx->disconnect_cb = template_disconnect_cb;
 	ctx->my_char.read_cb = my_char_read_cb;
 	ctx->my_char.write_cb = my_char_write_cb;
+  ctx->my_char.notify = 1;
 	simble_srv_register(ctx); // register our service
 }
 
@@ -61,7 +62,8 @@ static void
 notif_timer_cb(struct rtc_ctx *ctx)
 {
   NRF_GPIO->OUT ^= (1 << 1);
-  //simble_srv_char_update(&ctx->temp, &ctx->last_reading);
+  my_service_ctx.my_sensor_value++;
+  simble_srv_char_notify(&my_service_ctx.my_char, 0, 1, &my_service_ctx.my_sensor_value);
 }
 
 void
