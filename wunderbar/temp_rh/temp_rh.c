@@ -8,6 +8,7 @@
 #include "onboard-led.h"
 #include "htu21.h"
 #include "batt_serv.h"
+#include "rtc.h"
 
 
 struct rh_ctx {
@@ -67,6 +68,7 @@ rh_init(struct rh_ctx *ctx)
 		ORG_BLUETOOTH_UNIT_PERCENTAGE);
 	ctx->connect_cb = rh_connected;
 	ctx->rh.read_cb = rh_read_cb;
+	ctx->rh.notify = 1;
 	simble_srv_register(ctx);
 }
 
@@ -114,6 +116,7 @@ temp_init(struct temp_ctx *ctx)
 		ORG_BLUETOOTH_UNIT_DEGREE_CELSIUS);
 	ctx->connect_cb = temp_connected;
 	ctx->temp.read_cb = temp_read_cb;
+	ctx->temp.notify = 1;
 	simble_srv_register(ctx);
 }
 
@@ -122,10 +125,11 @@ static struct rh_ctx rh_ctx;
 static struct temp_ctx temp_ctx;
 
 
-void RTC1_IRQHandler()
+static void
+notif_timer_cb(struct rtc_ctx *ctx)
 {
-	temp_char_srv_update(&temp_ctx);
-	rh_char_srv_update(&rh_ctx);
+  simble_srv_char_notify(&temp_ctx.temp, false, 1, &temp_ctx.last_reading);
+	simble_srv_char_notify(&rh_ctx.temp, false, 1, &rh_ctx.last_reading);
 }
 
 void
@@ -134,6 +138,22 @@ main(void)
 	twi_master_init();
 
 	simble_init("Temperature/RH");
+
+	my_service_ctx.sampling_period = DEFAULT_SAMPLING_PERIOD;
+  //Set the timer parameters and initialize it.
+  struct rtc_ctx rtc_ctx = {
+      .rtc_x[NOTIF_TIMER_ID] = {.type = PERIODIC,
+                                .period = my_service_ctx.sampling_period,
+                                .enabled = false,
+                                .cb = notif_timer_cb,
+      }
+  };
+
+	// NOTE: rtc_init needs to be called AFTER simble_init which leaves
+	//		the SoftDevice to configure the LFCLKSRC to the external XTAL
+  rtc_init(&rtc_ctx);
+
+
 	ind_init();
 	batt_serv_init();
 	rh_init(&rh_ctx);
