@@ -141,16 +141,14 @@ main(void)
 {
 	simble_init("relayr_template"); // init BLE library
 
-  NRF_GPIO->PIN_CNF[2] = GPIO_PIN_CNF_DIR_Output;
-  NRF_GPIO->PIN_CNF[1] = GPIO_PIN_CNF_DIR_Output;
-
   my_service_ctx.sampling_period = DEFAULT_SAMPLING_PERIOD;
   //Set the timer parameters and initialize it.
   struct rtc_ctx rtc_ctx = {
-      .rtc_x[NOTIF_TIMER_ID].type = PERIODIC,
-      .rtc_x[NOTIF_TIMER_ID].period = my_service_ctx.sampling_period,
-      .rtc_x[NOTIF_TIMER_ID].enabled = false,
-      .rtc_x[NOTIF_TIMER_ID].cb = notif_timer_cb,
+      .rtc_x[NOTIF_TIMER_ID] = {.type = PERIODIC,
+                                .period = my_service_ctx.sampling_period,
+                                .enabled = false,
+                                .cb = notif_timer_cb,
+      }
   };
 
   // NOTE: rtc_init needs to be called AFTER simble_init which configures
