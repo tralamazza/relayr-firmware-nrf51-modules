@@ -128,13 +128,8 @@ static struct temp_ctx temp_ctx;
 static void
 notif_timer_cb(struct rtc_ctx *ctx)
 {
-	NRF_GPIO->OUT ^= (1 << 1);
-	temp_ctx.last_reading++; /*XXX:Only for test!*/
-
-  simble_srv_char_notify(&temp_ctx.temp, 0, 1, &temp_ctx.last_reading);
-	simble_srv_char_notify(&rh_ctx.temp, 0, 1, &rh_ctx.last_reading);
-
-
+  simble_srv_char_notify(&temp_ctx.temp, false, 1, &temp_ctx.last_reading);
+	simble_srv_char_notify(&rh_ctx.temp, false, 1, &rh_ctx.last_reading);
 }
 
 void
@@ -144,14 +139,16 @@ main(void)
 
 	simble_init("Temperature/RH");
 
-	NRF_GPIO->PIN_CNF[2] = GPIO_PIN_CNF_DIR_Output;
-  NRF_GPIO->PIN_CNF[1] = GPIO_PIN_CNF_DIR_Output;
-	//Set the timer parameters and initialize it.
+	my_service_ctx.sampling_period = DEFAULT_SAMPLING_PERIOD;
+  //Set the timer parameters and initialize it.
   struct rtc_ctx rtc_ctx = {
-      .rtc_x[0].period = 500,
-      .rtc_x[0].enabled = 1,
-      .rtc_x[0].cb = notif_timer_cb
+      .rtc_x[NOTIF_TIMER_ID] = {.type = PERIODIC,
+                                .period = my_service_ctx.sampling_period,
+                                .enabled = false,
+                                .cb = notif_timer_cb,
+      }
   };
+
 	// NOTE: rtc_init needs to be called AFTER simble_init which leaves
 	//		the SoftDevice to configure the LFCLKSRC to the external XTAL
   rtc_init(&rtc_ctx);

@@ -128,7 +128,6 @@ static struct my_service_ctx my_service_ctx;
 static void
 notif_timer_cb(struct rtc_ctx *ctx)
 {
-  NRF_GPIO->OUT ^= (1 << 1);
   my_service_ctx.my_sensor_value++;
   simble_srv_char_notify(&my_service_ctx.my_char_data,
                         false,
