@@ -2,9 +2,11 @@
 #include <string.h>
 
 #include <twi_master.h>
+#include <nrf_gpio.h>
 
 #define TCS3771 (0x29 << 1)
 
+#define TCS3771_COMMAND_TYPE_SPECIAL (3 << 5)
 #define TCS3771_COMMAND_TYPE_AUTOINC (0b01 << 5)
 #define TCS3771_COMMAND_SELECT (1 << 7)
 
@@ -39,6 +41,7 @@
 #define TCS3771_ID 0x12
 #define TCS3771_STATUS 0x13
 #define TCS3771_PDATA 0x1c
+#define TCS3771_CDATA 0x14
 
 static void
 tcs3771_select_register(uint8_t addr)
@@ -81,7 +84,7 @@ tcs3771_init(void)
         tcs3771_write_register(TCS3771_PPULSE, data2, sizeof(data2));
 
         uint8_t data3[] = {
-                10
+                216
         };
         tcs3771_write_register(TCS3771_WTIME, data3, sizeof(data3));
 
@@ -91,15 +94,30 @@ tcs3771_init(void)
         };
         tcs3771_write_register(TCS3771_PILT, data4, sizeof(data4));
 
+        uint16_t data6[] = {
+                0x130,          /* lower limit */
+                0x170           /* high limit */
+        };
+        tcs3771_write_register(TCS3771_AILT, data6, sizeof(data4));
+
         uint8_t data5[] = {
                 TCS3771_PERS_PPERS(10)
         };
         tcs3771_write_register(TCS3771_PERS, data5, sizeof(data5));
 
         uint8_t data1[] = {
-                TCS3771_ENABLE_PON | TCS3771_ENABLE_PEN | TCS3771_ENABLE_WEN | TCS3771_ENABLE_PIEN
+                TCS3771_ENABLE_PON | TCS3771_ENABLE_PEN | TCS3771_ENABLE_WEN | TCS3771_ENABLE_AEN | TCS3771_ENABLE_PIEN | TCS3771_ENABLE_AIEN
         };
         tcs3771_write_register(TCS3771_ENABLE, data1, sizeof(data1));
+
+        uint8_t rgb_cycles[] = {
+                252
+        };
+        tcs3771_write_register(TCS3771_ATIME, rgb_cycles, sizeof(rgb_cycles));
+        uint8_t prox_cycles[] = {
+                254
+        };
+        tcs3771_write_register(TCS3771_PTIME, prox_cycles, sizeof(prox_cycles));
 }
 
 void
@@ -117,6 +135,15 @@ tcs3771_proximity_data(void)
         uint16_t val;
 
         tcs3771_read_register(TCS3771_PDATA, &val, sizeof(val));
+        return (val);
+}
+
+uint64_t
+tcs3771_rgb_data(void)
+{
+        uint64_t val;
+
+        tcs3771_read_register(TCS3771_CDATA, &val, sizeof(val));
         return (val);
 }
 
