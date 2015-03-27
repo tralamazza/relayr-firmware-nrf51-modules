@@ -2,6 +2,8 @@
 
 #include "htu21.h"
 #include "util.h"
+#include <nrf_delay.h>
+#include "i2c.h"
 
 static inline uint8_t rotl(uint8_t value, uint8_t shift)
 {
@@ -16,10 +18,16 @@ static inline uint8_t rotr(uint8_t value, uint8_t shift)
 static bool htu21_block_reading(enum htu21_command_t cmd, uint16_t *reading)
 {
 	uint8_t result[3];
-	if (!(twi_master_transfer(HTU21_ADDRESS, &cmd, 1, TWI_DONT_ISSUE_STOP) &&
-		twi_master_transfer(HTU21_ADDRESS | TWI_READ_BIT, result, 3, TWI_ISSUE_STOP))) {
+	enable_i2c();
+	nrf_delay_us(15000);
+	if (!(twi_master_transfer(HTU21_ADDRESS, &cmd, 1, TWI_DONT_ISSUE_STOP))) {
 		return false;
 	}
+	nrf_delay_us(50000);
+	if(!(twi_master_transfer(HTU21_ADDRESS | TWI_READ_BIT, result, 3, TWI_ISSUE_STOP))) {
+		return false;
+	}
+	disable_i2c();
 	// checksum src: HTU21D Humidity Sensor Library, SparkFun Electronics
 	uint16_t raw = (result[0] << 8) | result[1];
 	uint32_t remainder = raw << 8 | result[2];

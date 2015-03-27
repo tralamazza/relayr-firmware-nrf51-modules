@@ -110,6 +110,15 @@ tcs3771_init(void)
         };
         tcs3771_write_register(TCS3771_ENABLE, data1, sizeof(data1));
 
+        //reset RGBC and PROX INTs
+        uint8_t int_reset[] = {
+                // 0x05 CLEAR PROX INT
+                // 0x06 CLEAR RGBC INT
+                // 0x07 CLEAR BOTH INT
+                TCS3771_COMMAND_SELECT | TCS3771_COMMAND_TYPE_SPECIAL | 0x07
+        };
+        twi_master_transfer(TCS3771, int_reset, sizeof(int_reset), TWI_ISSUE_STOP);
+        
         uint8_t rgb_cycles[] = {
                 252
         };

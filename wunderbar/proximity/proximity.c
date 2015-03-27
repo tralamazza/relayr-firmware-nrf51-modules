@@ -7,10 +7,12 @@
 #include "simble.h"
 #include "indicator.h"
 #include "batt_serv.h"
+#include "i2c.h"
 
 #include "tcs3771.h"
 
 #define WLED_CTRL_PIN 21
+#define TCS37717_INT_PIN 25
 
 struct proximity_ctx {
         struct service_desc;
@@ -33,13 +35,13 @@ proximity_update(struct proximity_ctx *ctx, uint16_t val)
 static void
 proximity_connected(struct service_desc *s)
 {
-        tcs3771_init();
+        // tcs3771_init();
 }
 
 static void
 proximity_disconnected(struct service_desc *s)
 {
-        tcs3771_stop();
+        // tcs3771_stop();
 }
 
 static void
@@ -47,9 +49,14 @@ proximity_read(struct service_desc *s, struct char_desc *c, void **valp, uint16_
 {
         struct proximity_ctx *ctx = (void *)s;
 
+        enable_i2c();
+        tcs3771_init();
+        while(nrf_gpio_pin_read(TCS37717_INT_PIN) == 1);
         ctx->proximity_value = tcs3771_proximity_data();
         *lenp = sizeof(ctx->proximity_value);
         *valp = &ctx->proximity_value;
+        tcs3771_stop();
+        disable_i2c();
 }
 
 static void
@@ -80,13 +87,13 @@ rgb_update(struct rgb_ctx *ctx, uint8_t *val)
 static void
 rgb_connected(struct service_desc *s)
 {
-        tcs3771_init();
+        // tcs3771_init();
 }
 
 static void
 rgb_disconnected(struct service_desc *s)
 {
-        tcs3771_stop();
+        // tcs3771_stop();
 }
 
 static void
@@ -94,11 +101,16 @@ rgb_read(struct service_desc *s, struct char_desc *c, void **valp, uint16_t *len
 {
         struct rgb_ctx *ctx = (void *)s;
 
+        enable_i2c();
+        tcs3771_init();
         nrf_gpio_pin_write(WLED_CTRL_PIN, true);
+        while(nrf_gpio_pin_read(TCS37717_INT_PIN) == 1);
         ctx->rgb_value = tcs3771_rgb_data();
         nrf_gpio_pin_write(WLED_CTRL_PIN, false);
         *lenp = sizeof(ctx->rgb_value);
         *valp = &ctx->rgb_value;
+        tcs3771_stop();
+        disable_i2c();
 }
 
 static void
@@ -126,9 +138,11 @@ static struct rgb_ctx rgb_ctx;
 void
 main(void)
 {
+        nrf_gpio_cfg_input(TCS37717_INT_PIN, GPIO_PIN_CNF_PULL_Pullup);
         nrf_gpio_cfg_output(WLED_CTRL_PIN);
 
         twi_master_init();
+        disable_i2c();
 
         simble_init("RGB/Proximity");
         ind_init();
@@ -136,5 +150,6 @@ main(void)
         proximity_init(&proximity_ctx);
         rgb_init(&rgb_ctx);
         simble_adv_start();
+
         simble_process_event_loop();
 }

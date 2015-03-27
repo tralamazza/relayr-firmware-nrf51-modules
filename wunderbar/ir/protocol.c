@@ -105,6 +105,8 @@ RTC1_IRQHandler(void)
 		context.state = PROTOCOL_STATE_END;
 		break;
 	case PROTOCOL_STATE_END:
+		// turn off GPIOTE to avoid overconsumption bug (PAN39)
+		NRF_GPIOTE->POWER = GPIOTE_POWER_POWER_Disabled << GPIOTE_POWER_POWER_Pos;
 		NRF_RTC1->TASKS_STOP = 1;
 		NRF_RTC1->TASKS_CLEAR = 1;
 		NRF_POWER->TASKS_LOWPWR = 1; // PAN 11 "HFCLK: Base current with HFCLK running is too high"
@@ -162,9 +164,6 @@ protocol_init(struct ir_protocol *protocol, uint8_t led_pin)
 	// gpio (led)
 	nrf_gpio_cfg_output(led_pin);
 
-	// gpiote0 (toggles gpio)
-	nrf_gpiote_task_config(0, led_pin, NRF_GPIOTE_POLARITY_TOGGLE, NRF_GPIOTE_INITIAL_VALUE_LOW);
-
 	// ppi's
 	sd_ppi_channel_assign(0, &NRF_TIMER1->EVENTS_COMPARE[0], &NRF_GPIOTE->TASKS_OUT[0]); // toggle led
 	sd_ppi_channel_assign(1, &NRF_TIMER1->EVENTS_COMPARE[1], &NRF_GPIOTE->TASKS_OUT[0]); // toggle led
@@ -179,6 +178,10 @@ protocol_init(struct ir_protocol *protocol, uint8_t led_pin)
 bool
 protocol_send(uint16_t address, uint16_t command, sent_cb_t* cb)
 {
+	// gpiote0 (toggles gpio)
+	NRF_GPIOTE->POWER = GPIOTE_POWER_POWER_Enabled << GPIOTE_POWER_POWER_Pos;
+	nrf_gpiote_task_config(0, context.led_pin, NRF_GPIOTE_POLARITY_TOGGLE, NRF_GPIOTE_INITIAL_VALUE_LOW);
+
 	if (context.state != PROTOCOL_STATE_IDLE) {
 		return false;
 	}

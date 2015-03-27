@@ -2,10 +2,12 @@
 #include <string.h>
 
 #include <twi_master.h>
+#include <nrf_delay.h>
 
 #include "simble.h"
 #include "indicator.h"
 #include "batt_serv.h"
+#include "i2c.h"
 
 #include "mpu6500.h"
 
@@ -26,13 +28,13 @@ motion_update(struct motion_ctx *ctx, struct mpu6500_data *val)
 static void
 motion_connected(struct service_desc *s)
 {
-        mpu6500_start();
+//        mpu6500_start();
 }
 
 static void
 motion_disconnected(struct service_desc *s)
 {
-        mpu6500_stop();
+//        mpu6500_stop();
 }
 
 static void
@@ -40,7 +42,12 @@ motion_read(struct service_desc *s, struct char_desc *c, void **valp, uint16_t *
 {
         struct motion_ctx *ctx = (void *)s;
 
+        enable_i2c();
+        mpu6500_start();
+        nrf_delay_us(MPU6500_WAKEUP_TIME);
         mpu6500_read_data(&ctx->motion_value);
+        mpu6500_stop();
+        disable_i2c();
         *lenp = sizeof(ctx->motion_value);
         *valp = &ctx->motion_value;
 }
@@ -72,8 +79,9 @@ main(void)
         twi_master_init();
         mpu6500_init();
         mpu6500_stop();
+        disable_i2c();
 
-        simble_init("motion");
+        simble_init("Motion");
         ind_init();
         batt_serv_init();
         motion_init(&motion_ctx);

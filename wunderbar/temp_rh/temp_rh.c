@@ -9,7 +9,12 @@
 #include "htu21.h"
 #include "batt_serv.h"
 #include "rtc.h"
+#include "i2c.h"
 
+#define DEFAULT_SAMPLING_PERIOD 1000UL
+#define MIN_SAMPLING_PERIOD 100UL
+
+#define NOTIF_TIMER_ID  0
 
 struct rh_ctx {
 	struct service_desc;
@@ -20,7 +25,9 @@ struct rh_ctx {
 struct temp_ctx {
 	struct service_desc;
 	struct char_desc temp;
+	struct char_desc sampling_period_char;
 	int8_t last_reading;
+	uint32_t sampling_period;
 };
 
 
@@ -105,7 +112,7 @@ temp_read_cb(struct service_desc *s, struct char_desc *c, void **val, uint16_t *
 static void
 temp_init(struct temp_ctx *ctx)
 {
-	simble_srv_init(ctx, simble_get_vendor_uuid_class(), VENDOR_UUID_SENSOR_TEMP_SERVICE);
+	simble_srv_init(ctx, simble_get_vendor_uuid_class(), VENDOR_UUID_SENSOR_SERVICE_2);
 	simble_srv_char_add(ctx, &ctx->temp,
 		simble_get_vendor_uuid_class(), VENDOR_UUID_TEMP_CHAR,
 		u8"Temperature",
@@ -128,8 +135,8 @@ static struct temp_ctx temp_ctx;
 static void
 notif_timer_cb(struct rtc_ctx *ctx)
 {
-  simble_srv_char_notify(&temp_ctx.temp, false, 1, &temp_ctx.last_reading);
-	simble_srv_char_notify(&rh_ctx.temp, false, 1, &rh_ctx.last_reading);
+	simble_srv_char_notify(&temp_ctx.temp, false, 1, &temp_ctx.last_reading);
+	simble_srv_char_notify(&rh_ctx.rh, false, 1, &rh_ctx.last_reading);
 }
 
 void
@@ -139,20 +146,20 @@ main(void)
 
 	simble_init("Temperature/RH");
 
-	my_service_ctx.sampling_period = DEFAULT_SAMPLING_PERIOD;
-  //Set the timer parameters and initialize it.
-  struct rtc_ctx rtc_ctx = {
-      .rtc_x[NOTIF_TIMER_ID] = {.type = PERIODIC,
-                                .period = my_service_ctx.sampling_period,
-                                .enabled = false,
-                                .cb = notif_timer_cb,
-      }
-  };
+	temp_ctx.sampling_period = DEFAULT_SAMPLING_PERIOD;
+	//Set the timer parameters and initialize it.
+	struct rtc_ctx rtc_ctx = {
+		.rtc_x[NOTIF_TIMER_ID] = {
+			.type = PERIODIC,
+                        .period = temp_ctx.sampling_period,
+                        .enabled = false,
+                        .cb = notif_timer_cb,
+		}
+	};
 
 	// NOTE: rtc_init needs to be called AFTER simble_init which leaves
-	//		the SoftDevice to configure the LFCLKSRC to the external XTAL
-  rtc_init(&rtc_ctx);
-
+	//the SoftDevice to configure the LFCLKSRC to the external XTAL
+	rtc_init(&rtc_ctx);
 
 	ind_init();
 	batt_serv_init();

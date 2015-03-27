@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include <nrf_gpio.h>
+#include <nrf_delay.h>
 
 #include "simble.h"
 #include "indicator.h"
@@ -24,6 +25,14 @@ struct noiselvl_ctx {
 static struct noiselvl_ctx noiselvl_ctx;
 
 
+static void
+enable_converter(bool value)
+{
+	nrf_gpio_pin_write(noise_level_pin_CONVERTER, !value);
+	nrf_gpio_pin_write(noise_level_pin_OPAMP, value);
+	nrf_gpio_pin_write(noise_level_pin_SWITCH_ON, value);
+}
+
 void
 ADC_IRQHandler(void)
 {
@@ -34,6 +43,7 @@ ADC_IRQHandler(void)
 	noiselvl_ctx.last_reading = NRF_ADC->RESULT;
 	NRF_ADC->TASKS_STOP = 1;
 	simble_srv_char_update(&noiselvl_ctx.noiselvl, &noiselvl_ctx.last_reading);
+	enable_converter(false);
 }
 
 static void
@@ -81,18 +91,10 @@ adc_read_blocking()
 }
 
 static void
-enable_converter(bool value)
-{
-	nrf_gpio_pin_write(noise_level_pin_CONVERTER, !value);
-	nrf_gpio_pin_write(noise_level_pin_OPAMP, value);
-	nrf_gpio_pin_write(noise_level_pin_SWITCH_ON, value);
-}
-
-static void
 noiselvl_connected(struct service_desc *s)
 {
 	enable_converter(true);
-	// TODO add 50ms delay
+	nrf_delay_us(15000);
 	adc_read_start();
 }
 
@@ -106,7 +108,10 @@ static void
 noiselvl_read_cb(struct service_desc *s, struct char_desc *c, void **val, uint16_t *len)
 {
 	struct noiselvl_ctx *ctx = (struct noiselvl_ctx *) s;
+	enable_converter(true);
+	nrf_delay_us(15000);
 	ctx->last_reading = adc_read_blocking();
+	enable_converter(false);
 	*val = &ctx->last_reading;
 	*len = 2;
 }
@@ -141,6 +146,7 @@ void
 main(void)
 {
 	gpio_init();
+	enable_converter(false);
 
 	simble_init("Noise level");
 	ind_init();

@@ -1,3 +1,5 @@
+#define MPU6500_WAKEUP_TIME   35000
+
 struct mpu6500_data {
         uint16_t accel_x;
         uint16_t accel_y;
