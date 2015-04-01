@@ -86,14 +86,14 @@ adc_read_blocking()
 	NRF_ADC->EVENTS_END = 0;
 	sd_nvic_DisableIRQ(ADC_IRQn);
 	NRF_ADC->INTENCLR = ADC_INTENCLR_END_Enabled;
+	NRF_ADC->TASKS_START = 1;
 	adc_config();
 	NRF_ADC->ENABLE = ADC_ENABLE_ENABLE_Enabled;
-	NRF_ADC->TASKS_START = 1;
 	while (NRF_ADC->EVENTS_END == 0) {
 		// __asm("nop");
 	}
-	NRF_ADC->EVENTS_END = 0;
 	uint16_t result = NRF_ADC->RESULT;
+	NRF_ADC->EVENTS_END = 0;
 	NRF_ADC->TASKS_STOP = 1;
 	return result;
 }
@@ -175,7 +175,7 @@ noiselvl_init(struct noiselvl_ctx* ctx)
         // A value of 0 will disable periodic notifications
         simble_srv_char_attach_format(&ctx->sampling_period_noiselvl,
 		BLE_GATT_CPF_FORMAT_UINT24, 0, ORG_BLUETOOTH_UNIT_UNITLESS);
-	ctx->connect_cb = noiselvl_connected; //check why hangs notification
+	ctx->connect_cb = noiselvl_connected;
 	ctx->disconnect_cb = noiselvl_disconnected;
 	ctx->noiselvl.read_cb = noiselvl_read_cb;
 	ctx->noiselvl.notify = 1;
@@ -220,9 +220,9 @@ main(void)
                         .cb = notif_timer_cb,
                 }
         };
+	batt_serv_init(&rtc_ctx);
         rtc_init(&rtc_ctx);
 	ind_init();
-	batt_serv_init();
 	noiselvl_init(&noiselvl_ctx);
 	simble_adv_start();
 	simble_process_event_loop();

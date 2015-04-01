@@ -1,5 +1,3 @@
-#include "segger_rtt_init.h"
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -50,9 +48,7 @@ proximity_update(struct proximity_ctx *ctx, uint16_t val)
 static void
 proximity_disconnected(struct service_desc *s)
 {
-        // tcs3771_stop();
         rtc_update_cfg(proximity_ctx.sampling_period, (uint8_t)NOTIF_TIMER_ID, false);
-        rtc_update_cfg(rgb_ctx.sampling_period, (uint8_t)NOTIF_TIMER_ID+1, false);
 }
 
 static void
@@ -150,8 +146,7 @@ rgb_update(struct rgb_ctx *ctx, uint8_t *val)
 static void
 rgb_disconnected(struct service_desc *s)
 {
-        // tcs3771_stop();
-        rtc_update_cfg(rgb_ctx.sampling_period, (uint8_t)NOTIF_TIMER_ID, false);
+        rtc_update_cfg(rgb_ctx.sampling_period, (uint8_t)NOTIF_TIMER_ID+1, false);
 }
 
 static void
@@ -234,7 +229,6 @@ rgb_init(struct rgb_ctx *ctx)
 static void
 rgb_notif_timer_cb(struct rtc_ctx *ctx)
 {
-        segger_rtt_printf("RGB NOTIFICATION\n");
         void *val = &rgb_ctx.rgb_value;
 	uint16_t len = sizeof(&rgb_ctx.rgb_value);
 	rgb_read(&rgb_ctx, &rgb_ctx.rgb, &val, &len);
@@ -244,8 +238,6 @@ rgb_notif_timer_cb(struct rtc_ctx *ctx)
 void
 main(void)
 {
-        segger_rtt_init();
-
         nrf_gpio_cfg_input(TCS37717_INT_PIN, GPIO_PIN_CNF_PULL_Pullup);
         nrf_gpio_cfg_output(WLED_CTRL_PIN);
 
@@ -270,9 +262,9 @@ main(void)
                         .cb = rgb_notif_timer_cb,
                 }
         };
+        batt_serv_init(&rtc_ctx);
         rtc_init(&rtc_ctx);
         ind_init();
-        batt_serv_init();
         proximity_init(&proximity_ctx);
         rgb_init(&rgb_ctx);
         simble_adv_start();

@@ -6,6 +6,7 @@
 #include "indicator.h"
 #include "protocol.h"
 #include "batt_serv.h"
+#include "rtc.h"
 
 
 struct ir_ctx {
@@ -50,6 +51,8 @@ static struct ir_protocol nec = {
 
 static struct ir_ctx ir_ctx;
 
+static struct rtc_ctx rtc_ctx;
+
 static void
 ir_write_cb(struct service_desc *s, struct char_desc *c, const void *val, const uint16_t len)
 {
@@ -78,9 +81,10 @@ void
 main(void)
 {
 	simble_init("IR transmitter");
-	protocol_init(&nec, IR_PIN_OUT);
+	protocol_init(&nec, IR_PIN_OUT, &rtc_ctx);
 	ind_init();
-	batt_serv_init();
+	batt_serv_init(&rtc_ctx);
+	rtc_init(&rtc_ctx);
 	ir_init(&ir_ctx);
 	simble_adv_start();
 	simble_process_event_loop();

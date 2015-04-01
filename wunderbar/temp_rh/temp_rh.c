@@ -270,10 +270,10 @@ main(void)
                         .cb = temp_notif_timer_cb,
 		}
 	};
+	batt_serv_init(&rtc_ctx);
 	rtc_init(&rtc_ctx);
 
 	ind_init();
-	batt_serv_init();
 	rh_init(&rh_ctx);
 	temp_init(&temp_ctx);
 	simble_adv_start();

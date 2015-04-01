@@ -147,10 +147,10 @@ main(void)
                         .cb = notif_timer_cb,
                 }
         };
+        batt_serv_init(&rtc_ctx);
         rtc_init(&rtc_ctx);
 
         ind_init();
-        batt_serv_init();
         motion_init(&motion_ctx);
         simble_adv_start();
 

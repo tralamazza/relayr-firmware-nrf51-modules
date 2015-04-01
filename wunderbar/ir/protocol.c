@@ -6,9 +6,12 @@
 
 #include "protocol.h"
 #include "util.h"
+#include "rtc.h"
 
 #define RTC_TASK_JITTER		(30u)
 #define LFCLK_FREQUENCY		(32768ul)
+
+static struct rtc_ctx *ctx;
 
 static struct {
 	uint8_t led_pin;
@@ -54,6 +57,17 @@ clock_bit_position(uint16_t data)
 void
 RTC1_IRQHandler(void)
 {
+	if (NRF_RTC1->EVENTS_COMPARE[3] != 0)
+	{
+		// prepare the comparator for the next interval
+		NRF_RTC1->CC[3] += ctx->rtc_x[3].period;
+
+		// clear the event CC_x
+		NRF_RTC1->EVENTS_COMPARE[3] = 0;
+
+		//call the registered callback
+		ctx->rtc_x[3].cb(ctx);
+	}
 	if (NRF_RTC1->EVENTS_COMPARE[0] == 0)
 		return;
 	NRF_RTC1->EVENTS_COMPARE[0] = 0;
@@ -119,8 +133,9 @@ RTC1_IRQHandler(void)
 }
 
 void
-protocol_init(struct ir_protocol *protocol, uint8_t led_pin)
+protocol_init(struct ir_protocol *protocol, uint8_t led_pin, struct rtc_ctx *c)
 {
+	ctx = c;
 	context.protocol = protocol;
 	context.led_pin = led_pin;
 
