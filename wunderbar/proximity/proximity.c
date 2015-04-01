@@ -1,3 +1,5 @@
+#include "segger_rtt_init.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -11,7 +13,7 @@
 #include "rtc.h"
 
 #define DEFAULT_SAMPLING_PERIOD 1000UL
-#define MIN_SAMPLING_PERIOD 100UL
+#define MIN_SAMPLING_PERIOD 200UL
 
 #define NOTIF_TIMER_ID  0
 
@@ -50,6 +52,7 @@ proximity_disconnected(struct service_desc *s)
 {
         // tcs3771_stop();
         rtc_update_cfg(proximity_ctx.sampling_period, (uint8_t)NOTIF_TIMER_ID, false);
+        rtc_update_cfg(rgb_ctx.sampling_period, (uint8_t)NOTIF_TIMER_ID+1, false);
 }
 
 static void
@@ -80,8 +83,10 @@ proximity_sampling_period_write_cb(struct service_desc *s, struct char_desc *c,
         const void *val, const uint16_t len)
 {
 	struct proximity_ctx *ctx = (struct proximity_ctx *)s;
-	ctx->sampling_period = *(uint32_t*)val;
-
+        if (*(uint32_t*)val > MIN_SAMPLING_PERIOD)
+                ctx->sampling_period = *(uint32_t*)val;
+        else
+                ctx->sampling_period = MIN_SAMPLING_PERIOD;
         rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
 }
 
@@ -90,10 +95,20 @@ proximity_notify_status_cb(struct service_desc *s, struct char_desc *c, const in
 {
         struct proximity_ctx *ctx = (struct proximity_ctx *)s;
 
-        if ((status & BLE_GATT_HVX_NOTIFICATION) && (ctx->sampling_period > MIN_SAMPLING_PERIOD))
+        if (status & BLE_GATT_HVX_NOTIFICATION)
                 rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
         else     //disable NOTIFICATION_TIMER
                 rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, false);
+}
+
+static void
+proximity_notif_timer_cb(struct rtc_ctx *ctx)
+{
+        void *val = &proximity_ctx.proximity_value;
+	uint16_t len = sizeof(&proximity_ctx.proximity_value);
+	proximity_read(&proximity_ctx, &proximity_ctx.proximity, &val, &len);
+	simble_srv_char_notify(&proximity_ctx.proximity, false, 2,
+                &proximity_ctx.proximity_value);
 }
 
 static void
@@ -169,9 +184,11 @@ rgb_sampling_period_write_cb(struct service_desc *s, struct char_desc *c,
         const void *val, const uint16_t len)
 {
 	struct rgb_ctx *ctx = (struct rgb_ctx *)s;
-	ctx->sampling_period = *(uint32_t*)val;
-
-        rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
+        if (*(uint32_t*)val > MIN_SAMPLING_PERIOD)
+                ctx->sampling_period = *(uint32_t*)val;
+        else
+                ctx->sampling_period = MIN_SAMPLING_PERIOD;
+        rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID+1, true);
 }
 
 void
@@ -179,10 +196,10 @@ rgb_notify_status_cb(struct service_desc *s, struct char_desc *c, const int8_t s
 {
         struct rgb_ctx *ctx = (struct rgb_ctx *)s;
 
-        if ((status & BLE_GATT_HVX_NOTIFICATION) && (ctx->sampling_period > MIN_SAMPLING_PERIOD))
-                rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
+        if (status & BLE_GATT_HVX_NOTIFICATION)
+                rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID+1, true);
         else     //disable NOTIFICATION_TIMER
-                rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, false);
+                rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID+1, false);
 }
 
 static void
@@ -215,22 +232,20 @@ rgb_init(struct rgb_ctx *ctx)
 }
 
 static void
-notif_timer_cb(struct rtc_ctx *ctx)
+rgb_notif_timer_cb(struct rtc_ctx *ctx)
 {
-        void *val = &proximity_ctx.proximity_value;
-	uint16_t len = sizeof(&proximity_ctx.proximity_value);
-	proximity_read(&proximity_ctx, &proximity_ctx.proximity, &val, &len);
-	val = &rgb_ctx.rgb_value;
-	len = sizeof(&rgb_ctx.rgb_value);
+        segger_rtt_printf("RGB NOTIFICATION\n");
+        void *val = &rgb_ctx.rgb_value;
+	uint16_t len = sizeof(&rgb_ctx.rgb_value);
 	rgb_read(&rgb_ctx, &rgb_ctx.rgb, &val, &len);
-	simble_srv_char_notify(&proximity_ctx.proximity, false, 2,
-                &proximity_ctx.proximity_value);
 	simble_srv_char_notify(&rgb_ctx.rgb, false, 8, &rgb_ctx.rgb_value);
 }
 
 void
 main(void)
 {
+        segger_rtt_init();
+
         nrf_gpio_cfg_input(TCS37717_INT_PIN, GPIO_PIN_CNF_PULL_Pullup);
         nrf_gpio_cfg_output(WLED_CTRL_PIN);
 
@@ -246,7 +261,13 @@ main(void)
                         .type = PERIODIC,
                         .period = proximity_ctx.sampling_period,
                         .enabled = false,
-                        .cb = notif_timer_cb,
+                        .cb = proximity_notif_timer_cb,
+                },
+                .rtc_x[NOTIF_TIMER_ID+1] = {
+                        .type = PERIODIC,
+                        .period = rgb_ctx.sampling_period,
+                        .enabled = false,
+                        .cb = rgb_notif_timer_cb,
                 }
         };
         rtc_init(&rtc_ctx);

@@ -11,7 +11,7 @@
 #include "rtc.h"
 
 #define DEFAULT_SAMPLING_PERIOD 1000UL
-#define MIN_SAMPLING_PERIOD 100UL
+#define MIN_SAMPLING_PERIOD 200UL
 
 #define NOTIF_TIMER_ID  0
 
@@ -102,7 +102,7 @@ static void
 noiselvl_connected(struct service_desc *s)
 {
 	enable_converter(true);
-	nrf_delay_us(50000);
+	nrf_delay_us(75000);
 	adc_read_start();
 }
 
@@ -118,7 +118,7 @@ noiselvl_read_cb(struct service_desc *s, struct char_desc *c, void **val, uint16
 {
 	struct noiselvl_ctx *ctx = (struct noiselvl_ctx *) s;
 	enable_converter(true);
-	nrf_delay_us(50000);
+	nrf_delay_us(75000);
 	ctx->last_reading = adc_read_blocking();
 	enable_converter(false);
 	*val = &ctx->last_reading;
@@ -138,8 +138,10 @@ sampling_period_write_cb(struct service_desc *s, struct char_desc *c,
         const void *val, const uint16_t len)
 {
 	struct noiselvl_ctx *ctx = (struct noiselvl_ctx *)s;
-	ctx->sampling_period = *(uint32_t*)val;
-
+	if (*(uint32_t*)val > MIN_SAMPLING_PERIOD)
+                ctx->sampling_period = *(uint32_t*)val;
+        else
+                ctx->sampling_period = MIN_SAMPLING_PERIOD;
         rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
 }
 
@@ -148,7 +150,7 @@ noiselvl_notify_status_cb(struct service_desc *s, struct char_desc *c, const int
 {
         struct noiselvl_ctx *ctx = (struct noiselvl_ctx *)s;
 
-        if ((status & BLE_GATT_HVX_NOTIFICATION) && (ctx->sampling_period > MIN_SAMPLING_PERIOD))
+        if (status & BLE_GATT_HVX_NOTIFICATION)
                 rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
         else     //disable NOTIFICATION_TIMER
                 rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, false);

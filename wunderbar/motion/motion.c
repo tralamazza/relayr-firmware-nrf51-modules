@@ -13,7 +13,7 @@
 #include "mpu6500.h"
 
 #define DEFAULT_SAMPLING_PERIOD 1000UL
-#define MIN_SAMPLING_PERIOD 100UL
+#define MIN_SAMPLING_PERIOD 250UL
 
 #define NOTIF_TIMER_ID  0
 
@@ -69,8 +69,11 @@ sampling_period_write_cb(struct service_desc *s, struct char_desc *c,
         const void *val, const uint16_t len)
 {
 	struct motion_ctx *ctx = (struct motion_ctx *)s;
-	ctx->sampling_period = *(uint32_t*)val;
 
+        if (*(uint32_t*)val > MIN_SAMPLING_PERIOD)
+                ctx->sampling_period = *(uint32_t*)val;
+        else
+                ctx->sampling_period = MIN_SAMPLING_PERIOD;
         rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
 }
 
@@ -79,7 +82,7 @@ motion_notify_status_cb(struct service_desc *s, struct char_desc *c, const int8_
 {
         struct motion_ctx *ctx = (struct motion_ctx *)s;
 
-        if ((status & BLE_GATT_HVX_NOTIFICATION) && (ctx->sampling_period > MIN_SAMPLING_PERIOD))
+        if (status & BLE_GATT_HVX_NOTIFICATION)
                 rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
         else     //disable NOTIFICATION_TIMER
                 rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, false);

@@ -12,7 +12,7 @@
 #include "i2c.h"
 
 #define DEFAULT_SAMPLING_PERIOD 1000UL
-#define MIN_SAMPLING_PERIOD 100UL
+#define MIN_SAMPLING_PERIOD 200UL
 
 #define NOTIF_TIMER_ID  0
 
@@ -60,6 +60,7 @@ static void
 rh_disconnected(struct service_desc *s)
 {
 	rtc_update_cfg(rh_ctx.sampling_period, (uint8_t)NOTIF_TIMER_ID, false);
+	rtc_update_cfg(temp_ctx.sampling_period, (uint8_t)NOTIF_TIMER_ID+1, false);
 }
 
 static void
@@ -85,9 +86,11 @@ rh_sampling_period_write_cb(struct service_desc *s, struct char_desc *c,
         const void *val, const uint16_t len)
 {
 	struct rh_ctx *ctx = (struct rh_ctx *)s;
-	ctx->sampling_period = *(uint32_t*)val;
-
-        rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
+	if (*(uint32_t*)val > MIN_SAMPLING_PERIOD)
+		ctx->sampling_period = *(uint32_t*)val;
+	else
+		ctx->sampling_period = MIN_SAMPLING_PERIOD;
+	rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
 }
 
 void
@@ -95,10 +98,19 @@ rh_notify_status_cb(struct service_desc *s, struct char_desc *c, const int8_t st
 {
         struct rh_ctx *ctx = (struct rh_ctx *)s;
 
-        if ((status & BLE_GATT_HVX_NOTIFICATION) && (ctx->sampling_period > MIN_SAMPLING_PERIOD))
+        if (status & BLE_GATT_HVX_NOTIFICATION)
                 rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
         else     //disable NOTIFICATION_TIMER
                 rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, false);
+}
+
+static void
+rh_notif_timer_cb(struct rtc_ctx *ctx)
+{
+	void *val = &rh_ctx.last_reading;
+	uint16_t len = sizeof(&rh_ctx.last_reading);
+	rh_read_cb(&rh_ctx, &rh_ctx.rh, &val, &len);
+	simble_srv_char_notify(&rh_ctx.rh, false, 1, &rh_ctx.last_reading);
 }
 
 static void
@@ -175,9 +187,11 @@ temp_sampling_period_write_cb(struct service_desc *s, struct char_desc *c,
         const void *val, const uint16_t len)
 {
 	struct temp_ctx *ctx = (struct temp_ctx *)s;
-	ctx->sampling_period = *(uint32_t*)val;
-
-        rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
+	if (*(uint32_t*)val > MIN_SAMPLING_PERIOD)
+                ctx->sampling_period = *(uint32_t*)val;
+        else
+                ctx->sampling_period = MIN_SAMPLING_PERIOD;
+        rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID+1, true);
 }
 
 
@@ -186,10 +200,10 @@ temp_notify_status_cb(struct service_desc *s, struct char_desc *c, const int8_t 
 {
         struct temp_ctx *ctx = (struct temp_ctx *)s;
 
-        if ((status & BLE_GATT_HVX_NOTIFICATION) && (ctx->sampling_period > MIN_SAMPLING_PERIOD))
-                rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
+        if (status & BLE_GATT_HVX_NOTIFICATION)
+                rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID+1, true);
         else     //disable NOTIFICATION_TIMER
-                rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, false);
+                rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID+1, false);
 }
 
 
@@ -224,15 +238,11 @@ temp_init(struct temp_ctx *ctx)
 }
 
 static void
-notif_timer_cb(struct rtc_ctx *ctx)
+temp_notif_timer_cb(struct rtc_ctx *ctx)
 {
-	void *val = &rh_ctx.last_reading;
-	uint16_t len = sizeof(&rh_ctx.last_reading);
-	rh_read_cb(&rh_ctx, &rh_ctx.rh, &val, &len);
-	val = &temp_ctx.last_reading;
-	len = sizeof(&temp_ctx.last_reading);
+	void *val = &temp_ctx.last_reading;
+	uint16_t len = sizeof(&temp_ctx.last_reading);
 	temp_read_cb(&temp_ctx, &temp_ctx.temp, &val, &len);
-	simble_srv_char_notify(&rh_ctx.rh, false, 1, &rh_ctx.last_reading);
 	simble_srv_char_notify(&temp_ctx.temp, false, 1, &temp_ctx.last_reading);
 }
 
@@ -249,9 +259,15 @@ main(void)
 	struct rtc_ctx rtc_ctx = {
 		.rtc_x[NOTIF_TIMER_ID] = {
 			.type = PERIODIC,
+                        .period = rh_ctx.sampling_period,
+                        .enabled = false,
+                        .cb = rh_notif_timer_cb,
+		},
+		.rtc_x[NOTIF_TIMER_ID+1] = {
+			.type = PERIODIC,
                         .period = temp_ctx.sampling_period,
                         .enabled = false,
-                        .cb = notif_timer_cb,
+                        .cb = temp_notif_timer_cb,
 		}
 	};
 	rtc_init(&rtc_ctx);
