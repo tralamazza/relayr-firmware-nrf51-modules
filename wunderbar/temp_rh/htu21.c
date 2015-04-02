@@ -5,6 +5,10 @@
 #include <nrf_delay.h>
 #include "i2c.h"
 
+#define HTU21_WAKEUP_TIME 15000
+#define TEMP_MEAS_TIME 50000
+#define RH_MEAS_TIME 16000
+
 static inline uint8_t rotl(uint8_t value, uint8_t shift)
 {
 	return (value << shift) | (value >> (sizeof(value) * 8 - shift));
@@ -19,11 +23,14 @@ static bool htu21_block_reading(enum htu21_command_t cmd, uint16_t *reading)
 {
 	uint8_t result[3];
 	enable_i2c();
-	nrf_delay_us(15000);
+	nrf_delay_us(HTU21_WAKEUP_TIME);
 	if (!(twi_master_transfer(HTU21_ADDRESS, &cmd, 1, TWI_DONT_ISSUE_STOP))) {
 		return false;
 	}
-	nrf_delay_us(50000);
+	if ((cmd >> 8) == HTU21_READ_TEMPERATURE_BLOCKING)
+		nrf_delay_us(TEMP_MEAS_TIME);
+	else
+		nrf_delay_us(RH_MEAS_TIME);
 	if(!(twi_master_transfer(HTU21_ADDRESS | TWI_READ_BIT, result, 3, TWI_ISSUE_STOP))) {
 		return false;
 	}

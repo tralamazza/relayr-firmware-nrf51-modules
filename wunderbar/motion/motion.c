@@ -61,7 +61,7 @@ sampling_period_read_cb(struct service_desc *s, struct char_desc *c, void **valp
 {
 	struct motion_ctx *ctx = (struct motion_ctx *)s;
 	*valp = &ctx->sampling_period;
-	*lenp = sizeof(&ctx->sampling_period);
+	*lenp = sizeof(ctx->sampling_period);
 }
 
 static void
@@ -99,7 +99,7 @@ motion_init(struct motion_ctx *ctx)
         simble_srv_char_add(ctx, &ctx->sampling_period_motion,
                      simble_get_vendor_uuid_class(), VENDOR_UUID_SAMPLING_PERIOD_CHAR,
                      u8"sampling period",
-                     sizeof(&ctx->sampling_period)); // size in bytes
+                     sizeof(ctx->sampling_period)); // size in bytes
         // Resolution: 1ms, max value: 16777216 (4 hours)
         // A value of 0 will disable periodic notifications
         simble_srv_char_attach_format(&ctx->sampling_period_motion,
@@ -121,10 +121,10 @@ static void
 notif_timer_cb(struct rtc_ctx *ctx)
 {
         void *val = &motion_ctx.motion_value;
-	uint16_t len = sizeof(&motion_ctx.motion_value);
+	uint16_t len = sizeof(motion_ctx.motion_value);
         motion_read(&motion_ctx, &motion_ctx.motion, &val, &len);
-        simble_srv_char_notify(&motion_ctx.motion, false,
-                sizeof(motion_ctx.motion_value), &motion_ctx.motion_value);
+        simble_srv_char_notify(&motion_ctx.motion, false, len,
+                &motion_ctx.motion_value);
 }
 
 void

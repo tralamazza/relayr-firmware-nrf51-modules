@@ -60,7 +60,7 @@ sampling_period_read_cb(struct service_desc *s, struct char_desc *c, void **valp
 {
 	struct bridge_adc_ctx *ctx = (struct bridge_adc_ctx *)s;
 	*valp = &ctx->sampling_period;
-	*lenp = sizeof(&ctx->sampling_period);
+	*lenp = sizeof(ctx->sampling_period);
 }
 
 static void
@@ -99,7 +99,7 @@ bridge_adc_init(struct bridge_adc_ctx *ctx)
         simble_srv_char_add(ctx, &ctx->sampling_period_bridge_adc,
 		simble_get_vendor_uuid_class(), VENDOR_UUID_SAMPLING_PERIOD_CHAR,
 		u8"sampling period",
-		sizeof(&ctx->sampling_period)); // size in bytes
+		sizeof(ctx->sampling_period)); // size in bytes
         // Resolution: 1ms, max value: 16777216 (4 hours)
         // A value of 0 will disable periodic notifications
         simble_srv_char_attach_format(&ctx->sampling_period_bridge_adc,
@@ -119,7 +119,8 @@ notif_timer_cb(struct rtc_ctx *ctx)
 {
         bridge_adc_ctx.bridge_adc_value = adc121c02_sample();
         simble_srv_char_notify(&bridge_adc_ctx.bridge_adc, false,
-                2, &bridge_adc_ctx.bridge_adc_value);
+                sizeof(bridge_adc_ctx.bridge_adc_value),
+                &bridge_adc_ctx.bridge_adc_value);
 }
 
 void

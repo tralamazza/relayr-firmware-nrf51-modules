@@ -15,6 +15,7 @@
 
 #define NOTIF_TIMER_ID  0
 
+#define CONV_WAKEUP_TIME 75000
 
 enum noise_level_pins {
 	noise_level_pin_CONVERTER = 11,
@@ -102,7 +103,7 @@ static void
 noiselvl_connected(struct service_desc *s)
 {
 	enable_converter(true);
-	nrf_delay_us(75000);
+	nrf_delay_us(CONV_WAKEUP_TIME);
 	adc_read_start();
 }
 
@@ -118,7 +119,7 @@ noiselvl_read_cb(struct service_desc *s, struct char_desc *c, void **val, uint16
 {
 	struct noiselvl_ctx *ctx = (struct noiselvl_ctx *) s;
 	enable_converter(true);
-	nrf_delay_us(75000);
+	nrf_delay_us(CONV_WAKEUP_TIME);
 	ctx->last_reading = adc_read_blocking();
 	enable_converter(false);
 	*val = &ctx->last_reading;
@@ -130,7 +131,7 @@ sampling_period_read_cb(struct service_desc *s, struct char_desc *c, void **valp
 {
 	struct noiselvl_ctx *ctx = (struct noiselvl_ctx *)s;
 	*valp = &ctx->sampling_period;
-	*lenp = sizeof(&ctx->sampling_period);
+	*lenp = sizeof(ctx->sampling_period);
 }
 
 static void
@@ -170,7 +171,7 @@ noiselvl_init(struct noiselvl_ctx* ctx)
 	simble_srv_char_add(ctx, &ctx->sampling_period_noiselvl,
 		simble_get_vendor_uuid_class(), VENDOR_UUID_SAMPLING_PERIOD_CHAR,
 		u8"sampling period",
-		sizeof(&ctx->sampling_period)); // size in bytes
+		sizeof(ctx->sampling_period)); // size in bytes
         // Resolution: 1ms, max value: 16777216 (4 hours)
         // A value of 0 will disable periodic notifications
         simble_srv_char_attach_format(&ctx->sampling_period_noiselvl,
@@ -197,10 +198,9 @@ static void
 notif_timer_cb(struct rtc_ctx *ctx)
 {
 	void *val = &noiselvl_ctx.last_reading;
-	uint16_t len = sizeof(&noiselvl_ctx.last_reading);
+	uint16_t len = sizeof(noiselvl_ctx.last_reading);
 	noiselvl_read_cb(&noiselvl_ctx, &noiselvl_ctx.noiselvl, &val, &len);
-        simble_srv_char_notify(&noiselvl_ctx.noiselvl, false, 2,
-		&noiselvl_ctx.last_reading);
+        simble_srv_char_notify(&noiselvl_ctx.noiselvl, false, len, val);
 }
 
 void

@@ -78,7 +78,7 @@ rh_sampling_period_read_cb(struct service_desc *s, struct char_desc *c, void **v
 {
 	struct rh_ctx *ctx = (struct rh_ctx *)s;
 	*valp = &ctx->sampling_period;
-	*lenp = sizeof(&ctx->sampling_period);
+	*lenp = sizeof(ctx->sampling_period);
 }
 
 static void
@@ -108,9 +108,9 @@ static void
 rh_notif_timer_cb(struct rtc_ctx *ctx)
 {
 	void *val = &rh_ctx.last_reading;
-	uint16_t len = sizeof(&rh_ctx.last_reading);
+	uint16_t len = sizeof(rh_ctx.last_reading);
 	rh_read_cb(&rh_ctx, &rh_ctx.rh, &val, &len);
-	simble_srv_char_notify(&rh_ctx.rh, false, 1, &rh_ctx.last_reading);
+	simble_srv_char_notify(&rh_ctx.rh, false, len, val);
 }
 
 static void
@@ -128,7 +128,7 @@ rh_init(struct rh_ctx *ctx)
 	simble_srv_char_add(ctx, &ctx->sampling_period_rh,
 		simble_get_vendor_uuid_class(), VENDOR_UUID_SAMPLING_PERIOD_CHAR,
 		u8"sampling period",
-		sizeof(&ctx->sampling_period)); // size in bytes
+		sizeof(ctx->sampling_period)); // size in bytes
 	ctx->connect_cb = rh_connected;
 	ctx->disconnect_cb = rh_disconnected;
 	ctx->rh.read_cb = rh_read_cb;
@@ -179,7 +179,7 @@ temp_sampling_period_read_cb(struct service_desc *s, struct char_desc *c, void *
 {
 	struct temp_ctx *ctx = (struct temp_ctx *)s;
 	*valp = &ctx->sampling_period;
-	*lenp = sizeof(&ctx->sampling_period);
+	*lenp = sizeof(ctx->sampling_period);
 }
 
 static void
@@ -222,7 +222,7 @@ temp_init(struct temp_ctx *ctx)
 	simble_srv_char_add(ctx, &ctx->sampling_period_temp,
 		simble_get_vendor_uuid_class(), VENDOR_UUID_SAMPLING_PERIOD_CHAR,
 		u8"sampling period",
-		sizeof(&ctx->sampling_period)); // size in bytes
+		sizeof(ctx->sampling_period)); // size in bytes
         // Resolution: 1ms, max value: 16777216 (4 hours)
         // A value of 0 will disable periodic notifications
         simble_srv_char_attach_format(&ctx->sampling_period_temp,
@@ -241,9 +241,9 @@ static void
 temp_notif_timer_cb(struct rtc_ctx *ctx)
 {
 	void *val = &temp_ctx.last_reading;
-	uint16_t len = sizeof(&temp_ctx.last_reading);
+	uint16_t len = sizeof(temp_ctx.last_reading);
 	temp_read_cb(&temp_ctx, &temp_ctx.temp, &val, &len);
-	simble_srv_char_notify(&temp_ctx.temp, false, 1, &temp_ctx.last_reading);
+	simble_srv_char_notify(&temp_ctx.temp, false, len, val);
 }
 
 void

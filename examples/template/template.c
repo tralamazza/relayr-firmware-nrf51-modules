@@ -59,7 +59,7 @@ sampling_period_read_cb(struct service_desc *s, struct char_desc *c, void **valp
 {
 	struct my_service_ctx *ctx = (struct my_service_ctx *)s;
 	*valp = &ctx->sampling_period;
-	*lenp = sizeof(&ctx->sampling_period);
+	*lenp = sizeof(ctx->sampling_period);
 }
 
 static void
@@ -99,7 +99,7 @@ my_service_init(struct my_service_ctx *ctx)
         simble_srv_char_add(ctx, &ctx->sampling_period_char,
 		simble_get_vendor_uuid_class(), VENDOR_UUID_SAMPLING_PERIOD_CHAR,
 		u8"sampling period",
-		sizeof(&ctx->sampling_period)); // size in bytes
+		sizeof(ctx->sampling_period)); // size in bytes
         // Resolution: 1ms, max value: 16777216 (4 hours)
         // A value of 0 will disable periodic notifications
         simble_srv_char_attach_format(&ctx->sampling_period_char,
