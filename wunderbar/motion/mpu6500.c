@@ -15,6 +15,7 @@ enum mpu6500_reg_addr {
         MPU6500_ACCEL_XOUT = 59,
         MPU6500_PWR_MGMT_1 = 107,
         MPU6500_PWR_MGMT_2 = 108,
+        MPU6500_INT_PIN_CFG = 55,
 };
 
 static void
@@ -36,14 +37,14 @@ mpu6500_read_register(enum mpu6500_reg_addr addr, uint8_t *data, size_t len)
 void
 mpu6500_start(void)
 {
-        uint8_t val[] = {0x01};
+        uint8_t val[] = {0x09};
         mpu6500_write_register(MPU6500_PWR_MGMT_1, val, sizeof(val));
 }
 
 void
 mpu6500_stop(void)
 {
-        uint8_t val[] = {0x41};
+        uint8_t val[] = {0x49};
         mpu6500_write_register(MPU6500_PWR_MGMT_1, val, sizeof(val));
 }
 
@@ -56,6 +57,8 @@ mpu6500_init(void)
         while (val[0] & 0x80) {
                 mpu6500_read_register(MPU6500_PWR_MGMT_1, val, sizeof(val));
         }
+        //Otherwise, int pin drains 300µa
+        mpu6500_write_register(MPU6500_INT_PIN_CFG, 0x80, 1);
 }
 
 void
