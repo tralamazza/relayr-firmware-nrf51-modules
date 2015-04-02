@@ -3,7 +3,7 @@
 #include "rtc.h"
 
 #define DEFAULT_SAMPLING_PERIOD 1000UL
-#define MIN_SAMPLING_PERIOD 100UL
+#define MIN SAMPLING_PERIOD 250UL
 
 #define NOTIF_TIMER_ID  0
 
