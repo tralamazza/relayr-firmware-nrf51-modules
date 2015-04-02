@@ -14,7 +14,7 @@
 #define MIN_SAMPLING_PERIOD 200UL
 
 #define NOTIF_TIMER_ID_PROX  0
-#define NOTIF_TIMER_ID_PROX  1
+#define NOTIF_TIMER_ID_RGB  1
 
 #include "tcs3771.h"
 
