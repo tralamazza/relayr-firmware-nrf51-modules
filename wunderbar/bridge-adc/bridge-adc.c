@@ -10,9 +10,9 @@
 #include "adc121c02.h"
 
 #define DEFAULT_SAMPLING_PERIOD 1000UL
-#define MIN SAMPLING_PERIOD 250UL
+#define MIN_SAMPLING_PERIOD 250UL
 
-#define NOTIF_TIMER_ID  0
+#define NOTIF_TIMER_ID 0
 
 
 struct bridge_adc_ctx {
@@ -67,11 +67,12 @@ static void
 sampling_period_write_cb(struct service_desc *s, struct char_desc *c,
         const void *val, const uint16_t len)
 {
+        struct bridge_adc_ctx *ctx = (struct bridge_adc_ctx *)s;
         if (*(uint32_t*)val > MIN_SAMPLING_PERIOD)
                 ctx->sampling_period = *(uint32_t*)val;
         else
                 ctx->sampling_period = MIN_SAMPLING_PERIOD;
-        rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID_PROX, true);
+        rtc_update_cfg(ctx->sampling_period, (uint8_t)NOTIF_TIMER_ID, true);
 }
 
 void
