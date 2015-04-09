@@ -10,9 +10,9 @@ before_install:
 install:
   - sudo apt-get install build-essential gcc-arm-none-eabi unzip wget
   - wget http://developer.nordicsemi.com/nRF51_SDK/nRF51_SDK_v8.x.x/nRF51_SDK_8.0.0_5fc2c3a.zip -O /tmp/nrfsdk.zip
-  - unzip /tmp/nrfsdk.zip -d $TRAVIS_BUILD_DIR/relayr-firmware-nrf51-modules/nrf51-sdk/nordic
+  - unzip /tmp/nrfsdk.zip -d $TRAVIS_BUILD_DIR/nrf51-sdk/nordic
   - wget http://download.segger.com/J-Link/RTT/RTT_Implementation_141217.zip -O /tmp/segger.zip
-  - unzip /tmp/segger.zip -d $TRAVIS_BUILD_DIR/relayr-firmware-nrf51-modules/nrf51-sdk/segger
+  - unzip /tmp/segger.zip -d $TRAVIS_BUILD_DIR/nrf51-sdk/segger
 env:
   - MODULE=bridge-adc
   - MODULE=ir
